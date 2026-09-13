@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 import type {
   ContentItem,
   ContentQuery,
-  KairosStore,
+  MidasStore,
   RunQuery,
   RunRecord,
 } from './store.js';
@@ -20,7 +20,7 @@ export function runsLogPath(workspaceRoot: string): string {
 }
 
 export function contentItemsPath(workspaceRoot: string): string {
-  return join(workspaceRoot, 'kairos', 'content', 'items.jsonl');
+  return join(workspaceRoot, 'midas', 'content', 'items.jsonl');
 }
 
 async function appendLine(path: string, entry: unknown): Promise<void> {
@@ -53,7 +53,7 @@ async function readLatestById<T extends { id: string }>(path: string): Promise<T
   return [...byId.values()];
 }
 
-export class JsonlStore implements KairosStore {
+export class JsonlStore implements MidasStore {
   constructor(private readonly workspaceRoot: string) {}
 
   async recordRun(run: RunRecord): Promise<void> {

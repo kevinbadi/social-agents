@@ -4,7 +4,7 @@ Publish a short vertical video (<90s, 9:16) + caption to TikTok / Instagram Reel
 
 ## Before anything
 
-Read `kairos/BRAND.md` and `kairos/PROFILES.md`. Caption, hooks, and CTA flow from the brand pack. If pulling from `content-library/`, take the next unposted clip (keep a `content-library/POSTED.md` ledger; append after each successful post).
+Read `midas/BRAND.md` and `midas/PROFILES.md`. Caption, hooks, and CTA flow from the brand pack. If pulling from `content-library/`, take the next unposted clip (keep a `content-library/POSTED.md` ledger; append after each successful post).
 
 ## Procedure
 
@@ -13,7 +13,7 @@ Read `kairos/BRAND.md` and `kairos/PROFILES.md`. Caption, hooks, and CTA flow fr
 3. Check the caption with `validate_post_length` against every target platform.
 4. TikTok prerequisites: `tiktok_creator_info` for the account's privacy levels; the post needs `platformSpecificData` with a valid `privacyLevel`, `allowComment`/`allowDuet`/`allowStitch`, and `contentPreviewConfirmed: true` + `expressConsentGiven: true` — TikTok posts FAIL without the consent flags.
 5. One `create_post` with a platform entry per shortform account (TikTok + Instagram + YouTube). Instagram auto-detects Reels from 9:16 ≤90s video; YouTube auto-detects Shorts (≤3 min + vertical, no flag exists). Give YouTube a `title`.
-6. Scheduling: pass `scheduledFor` + the timezone from `kairos/kairos.json`. CreatorOS servers publish — nothing local needs to stay running.
+6. Scheduling: pass `scheduledFor` + the timezone from `midas/midas.json`. CreatorOS servers publish — nothing local needs to stay running.
 
 ## Judgment rules
 

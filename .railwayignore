@@ -1,6 +1,6 @@
 # What does NOT ship to Railway. Deploys MUST use `railway up --no-gitignore`
 # (plain `railway up` silently drops gitignored files — and the gitignored
-# kairos/ IS the workspace). That makes this file the ONLY exclusion list,
+# midas/ IS the workspace). That makes this file the ONLY exclusion list,
 # so secrets and junk are listed here explicitly.
 node_modules
 .git
@@ -14,6 +14,6 @@ dist
 
 # Everything else SHIPS on purpose — the worker needs it:
 #   src/ + package files + Dockerfile.worker   the code it runs
-#   kairos/                                    config, skills, automations.json
+#   midas/                                    config, skills, automations.json
 #   templates/                                 skill templates
 #   content-library/                           media the posting automations publish

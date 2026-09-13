@@ -12,7 +12,7 @@
  * Pure functions only — the server fills in live stats, this module
  * decides shape and health.
  */
-import type { KairosConfig } from '../config/kairosConfig.js';
+import type { MidasConfig } from '../config/midasConfig.js';
 import { STARTER_CRONS } from '../automations/crons.js';
 import { describeSchedule } from './workflows.js';
 import type { ActivityEntry } from '../util/activityLog.js';
@@ -89,10 +89,10 @@ export function statsFrom(entries: ActivityEntry[], match: (e: ActivityEntry) =>
 const REPLY_ACTIONS = new Set(['reply_to_comment', 'private_reply_to_comment']);
 
 /**
- * The engagement flows driven by kairos.json: auto-replies to comments
+ * The engagement flows driven by midas.json: auto-replies to comments
  * and DMs. They run through the agent on the configured pathway.
  */
-export function engagementFlows(config: KairosConfig | null, entries: ActivityEntry[]): Flow[] {
+export function engagementFlows(config: MidasConfig | null, entries: ActivityEntry[]): Flow[] {
   const origin: FlowOrigin = config?.automationTarget === 'railway' ? 'railway' : 'local';
   const persona = config?.engagementAgent?.persona ?? null;
   const personaSub = persona ? (persona.length > 42 ? `${persona.slice(0, 39)}…` : persona) : 'no persona set yet';
@@ -157,7 +157,7 @@ export interface LiveFunnel {
 }
 
 export function funnelFlows(
-  config: KairosConfig | null,
+  config: MidasConfig | null,
   live: LiveFunnel[],
   statsById: Map<string, FlowStats>,
 ): Flow[] {
@@ -193,7 +193,7 @@ export function funnelFlows(
  * Known starter crons get their full shape; anything else found in the
  * output gets a generic schedule→run node pair (never silently dropped).
  */
-export function cronFlows(listOutput: string, config: KairosConfig | null, entries: ActivityEntry[]): Flow[] {
+export function cronFlows(listOutput: string, config: MidasConfig | null, entries: ActivityEntry[]): Flow[] {
   const origin: FlowOrigin = config?.automationTarget === 'railway' ? 'railway' : 'local';
   const listed = listOutput.toLowerCase();
   const flows: Flow[] = [];

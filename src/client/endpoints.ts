@@ -1,5 +1,5 @@
 /**
- * The capability surface. Kairos may only touch CreatorOS endpoints listed
+ * The capability surface. Midas may only touch CreatorOS endpoints listed
  * here — the allowlist is enforced in the executor (every request funnels
  * through checkEndpoint), not by prompt discipline. Profile-scoped keys are
  * known to permit some operations server-side that must never be exposed;

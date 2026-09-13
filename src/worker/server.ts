@@ -10,11 +10,11 @@
  *                  dashboard merges it into the overview heatmap/counters
  */
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import type { KairosStore, RunStatus } from '../storage/store.js';
+import type { MidasStore, RunStatus } from '../storage/store.js';
 import { readActivity } from '../util/activityLog.js';
 
 export interface WorkerHealth {
-  service: 'kairos-worker';
+  service: 'midas-worker';
   startedAt: string;
   timezone: string;
   automations: Array<{
@@ -32,7 +32,7 @@ export interface WorkerServerOptions {
   /** When set, every route requires `Authorization: Bearer <token>`. */
   token?: string;
   getHealth: () => WorkerHealth;
-  store: KairosStore;
+  store: MidasStore;
   /** Where the worker's logs/activity.jsonl lives — served on /activity. */
   workspaceRoot: string;
 }

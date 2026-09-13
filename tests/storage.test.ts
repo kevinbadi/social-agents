@@ -6,7 +6,7 @@ import { JsonlStore, runsLogPath } from '../src/storage/jsonlStore.js';
 import type { RunRecord } from '../src/storage/store.js';
 
 async function tmpRoot(): Promise<string> {
-  return mkdtemp(join(tmpdir(), 'kairos-store-'));
+  return mkdtemp(join(tmpdir(), 'midas-store-'));
 }
 
 const run = (overrides: Partial<RunRecord>): RunRecord => ({

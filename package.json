@@ -1,14 +1,14 @@
 {
-  "name": "kairos",
+  "name": "midas",
   "version": "0.1.0",
-  "description": "Kairos — the open-source CreatorOS agent harness. Runs your entire social presence: posting at scale, automations, comment & DM replies, analytics.",
+  "description": "Midas — the open-source CreatorOS agent harness. Runs your entire social presence: posting at scale, automations, comment & DM replies, analytics.",
   "type": "module",
   "license": "MIT",
   "engines": {
     "node": ">=20"
   },
   "bin": {
-    "kai": "bin/kai.mjs"
+    "midas": "bin/midas.mjs"
   },
   "scripts": {
     "prestart": "node scripts/ensure-deps.mjs",
@@ -23,7 +23,7 @@
   },
   "keywords": [
     "creatoros",
-    "kairos",
+    "midas",
     "social-media",
     "ai-agent",
     "agent-harness",
@@ -32,16 +32,17 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/kevinbadi/kairos"
+    "url": "https://github.com/kevinbadi/midas"
   },
   "bugs": {
-    "url": "https://github.com/kevinbadi/kairos/issues"
+    "url": "https://github.com/kevinbadi/midas/issues"
   },
-  "homepage": "https://github.com/kevinbadi/kairos#readme",
+  "homepage": "https://github.com/kevinbadi/midas#readme",
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.3.0",
     "@creatoros/cli": "^0.1.7",
     "@inquirer/prompts": "^8.5.2",
+    "pg": "^8.23.0",
     "tsx": "^4.23.0",
     "zod": "^4.0.0"
   },

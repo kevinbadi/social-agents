@@ -7,7 +7,7 @@ import {
   loadConfig,
   resolveAutomationTarget,
   saveConfig,
-} from '../src/config/kairosConfig.js';
+} from '../src/config/midasConfig.js';
 import { automationCreateArgs, STARTER_CRONS } from '../src/automations/crons.js';
 
 describe('automation pathway selection', () => {
@@ -16,16 +16,16 @@ describe('automation pathway selection', () => {
     expect(resolveAutomationTarget(defaultConfig())).toBe('local');
   });
 
-  it('persists and reloads the railway pathway from kairos.json', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'kairos-pathway-'));
-    const path = join(dir, 'kairos', 'kairos.json');
+  it('persists and reloads the railway pathway from midas.json', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'midas-pathway-'));
+    const path = join(dir, 'midas', 'midas.json');
     await saveConfig(path, { ...defaultConfig(), automationTarget: 'railway' });
     const loaded = await loadConfig(path);
     expect(resolveAutomationTarget(loaded)).toBe('railway');
   });
 
   it('returns null config when no setup exists yet', async () => {
-    expect(await loadConfig('/nonexistent/kairos.json')).toBeNull();
+    expect(await loadConfig('/nonexistent/midas.json')).toBeNull();
   });
 });
 

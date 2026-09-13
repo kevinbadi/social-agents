@@ -15,8 +15,8 @@ import {
 import { describeWorkerHealth, parseProducts, renderBrandMd, renderClaudeMd, renderProfilesMd, renderRailwayGuide, renderSetupPrompt } from '../src/onboarding/render.js';
 
 async function tmpStatePath(): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), 'kairos-test-'));
-  return join(dir, 'kairos', '.setup-state.json');
+  const dir = await mkdtemp(join(tmpdir(), 'midas-test-'));
+  return join(dir, 'midas', '.setup-state.json');
 }
 
 describe('interview persistence & resume', () => {
@@ -121,7 +121,7 @@ describe('brand pack rendering', () => {
     competitors: ['@rivalbrand', '@otherbrand'],
   };
 
-  it('everything Kairos writes later flows from BRAND.md', () => {
+  it('everything Midas writes later flows from BRAND.md', () => {
     const md = renderBrandMd(brand);
     expect(md).toContain('bold, scarce, playful');
     expect(md).toContain('Never: thirsty');
@@ -154,7 +154,7 @@ describe('brand pack rendering', () => {
       },
     };
     const prompt = renderSetupPrompt(state);
-    expect(prompt).toContain('kairos/kairos.json');
+    expect(prompt).toContain('midas/midas.json');
     expect(prompt).toContain('railway');
     expect(prompt).toContain('@rivalbrand');
     expect(prompt).toMatch(/ZERO automations/i);
@@ -197,14 +197,14 @@ describe('brand pack rendering', () => {
       completed: [],
       answers: { pathway: { automationTarget: 'railway', timezone: 'America/Toronto', workerToken: 'tok' } },
     });
-    expect(withoutToken).toContain('kairos/RAILWAY.md');
+    expect(withoutToken).toContain('midas/RAILWAY.md');
     expect(withoutToken).toContain('worker.url');
     // Worker already live → no deploy task at all.
     const withWorker = renderSetupPrompt({
       completed: [],
       answers: { pathway: { automationTarget: 'railway', timezone: 'America/Toronto', workerUrl: 'https://w.up.railway.app' } },
     });
-    expect(withWorker).not.toContain('kairos/RAILWAY.md');
+    expect(withWorker).not.toContain('midas/RAILWAY.md');
     expect(withWorker).not.toContain('Provision my Railway worker');
   });
 
@@ -217,10 +217,10 @@ describe('brand pack rendering', () => {
         pathway: { automationTarget: 'railway', timezone: 'America/Toronto' },
       },
     });
-    expect(md).toContain('kairos/kairos.json');
-    expect(md).toContain('kairos/BRAND.md');
-    expect(md).toContain('kairos/PROFILES.md');
-    expect(md).toContain('kairos/SETUP_PROMPT.md');
+    expect(md).toContain('midas/midas.json');
+    expect(md).toContain('midas/BRAND.md');
+    expect(md).toContain('midas/PROFILES.md');
+    expect(md).toContain('midas/SETUP_PROMPT.md');
     expect(md).toContain('railway · timezone America/Toronto');
     expect(md).toMatch(/parallel-safe/i);
     expect(md).toMatch(/never print them/i);
@@ -247,7 +247,7 @@ describe('brand pack rendering', () => {
     expect(guide).toContain('Dockerfile.worker');
     expect(guide).toContain('abc123token');
     expect(guide).toContain('America/Toronto');
-    expect(guide).toContain('KAIROS_WORKER_TOKEN');
+    expect(guide).toContain('MIDAS_WORKER_TOKEN');
     expect(guide).toContain('spend limit');
     expect(guide).not.toMatch(/sk_[0-9a-f]/i); // never a real key in a file
   });

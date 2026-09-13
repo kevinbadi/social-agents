@@ -1,15 +1,15 @@
 import { join } from 'node:path';
 
 /**
- * Everything Kairos writes for the user lives under `kairos/` in the
+ * Everything Midas writes for the user lives under `midas/` in the
  * workspace root. The whole directory is gitignored — it holds the brand
  * pack, profile map, config, skills, and knowledge base for one client.
  */
-export interface KairosPaths {
+export interface MidasPaths {
   root: string;
   /** Repo-root CLAUDE.md — the generated briefing any agent chat reads. */
   claudeMd: string;
-  kairosDir: string;
+  midasDir: string;
   brandMd: string;
   profilesMd: string;
   configJson: string;
@@ -21,18 +21,18 @@ export interface KairosPaths {
   contentLibraryDir: string;
 }
 
-export function kairosPaths(root: string = process.cwd()): KairosPaths {
-  const kairosDir = join(root, 'kairos');
-  const knowledgeDir = join(kairosDir, 'knowledge');
+export function midasPaths(root: string = process.cwd()): MidasPaths {
+  const midasDir = join(root, 'midas');
+  const knowledgeDir = join(midasDir, 'knowledge');
   return {
     root,
     claudeMd: join(root, 'CLAUDE.md'),
-    kairosDir,
-    brandMd: join(kairosDir, 'BRAND.md'),
-    profilesMd: join(kairosDir, 'PROFILES.md'),
-    configJson: join(kairosDir, 'kairos.json'),
-    setupStateJson: join(kairosDir, '.setup-state.json'),
-    skillsDir: join(kairosDir, 'skills'),
+    midasDir,
+    brandMd: join(midasDir, 'BRAND.md'),
+    profilesMd: join(midasDir, 'PROFILES.md'),
+    configJson: join(midasDir, 'midas.json'),
+    setupStateJson: join(midasDir, '.setup-state.json'),
+    skillsDir: join(midasDir, 'skills'),
     knowledgeDir,
     competitorsMd: join(knowledgeDir, 'COMPETITORS.md'),
     tutorialsMd: join(knowledgeDir, 'TUTORIALS.md'),

@@ -1,7 +1,7 @@
 /**
- * The onboarding interview — Kairos holding the user's hand on day one.
+ * The onboarding interview — Midas holding the user's hand on day one.
  * Conversational, one question at a time; every answer lands in a file
- * Kairos reads forever after. Resumable: state saves after every step.
+ * Midas reads forever after. Resumable: state saves after every step.
  */
 import { confirm, input, password, select } from '@inquirer/prompts';
 import { cp, mkdir, writeFile } from 'node:fs/promises';
@@ -14,7 +14,7 @@ import { CreatorOSClient, isValidKeyShape } from '../client/client.js';
 import { platformLabel } from '../client/platformMatrix.js';
 import type { SocialAccount } from '../client/types.js';
 import { maskKey } from '../util/mask.js';
-import { kairosPaths, type KairosPaths } from '../paths.js';
+import { midasPaths, type MidasPaths } from '../paths.js';
 import {
   resolveApiKey,
   resolveRailwayToken,
@@ -24,7 +24,7 @@ import {
   saveRailwayToken,
 } from '../config/credentials.js';
 import { provisionRailwayWorker } from '../automations/railwayProvision.js';
-import { saveConfig, type KairosConfig } from '../config/kairosConfig.js';
+import { saveConfig, type MidasConfig } from '../config/midasConfig.js';
 import {
   isStepDone,
   loadState,
@@ -55,19 +55,19 @@ function say(text: string): void {
 
 export interface InterviewResult {
   client: CreatorOSClient;
-  config: KairosConfig;
+  config: MidasConfig;
 }
 
 export async function runInterview(root: string = process.cwd()): Promise<InterviewResult> {
-  const paths = kairosPaths(root);
-  await mkdir(paths.kairosDir, { recursive: true });
+  const paths = midasPaths(root);
+  await mkdir(paths.midasDir, { recursive: true });
   const state = await loadState(paths.setupStateJson);
   const resuming = state.completed.length > 0;
 
   say(
     resuming
-      ? `Kai here — picking up where we left off. ${state.completed.length} step(s) already done.`
-      : "Hey — I'm Kai. I run your social presence on CreatorOS: posting at scale, automations, replies, analytics. This form is just the briefing — no AI setup here, no API keys for a model. When it's done I write your whole workspace to disk (CLAUDE.md + kairos/), and you hand ANY agent chat the initialization prompt. About five minutes.",
+      ? `Midas here — picking up where we left off. ${state.completed.length} step(s) already done.`
+      : "Hey — I'm Midas. I run your social presence on CreatorOS: posting at scale, automations, replies, analytics. This form is just the briefing — no AI setup here, no API keys for a model. When it's done I write your whole workspace to disk (CLAUDE.md + midas/), and you hand ANY agent chat the initialization prompt. About five minutes.",
   );
 
   // ---- Creator or agency ----
@@ -92,7 +92,7 @@ export async function runInterview(root: string = process.cwd()): Promise<Interv
     await writeFile(paths.brandMd, renderBrandMd(state.answers.brand), 'utf8');
     markStepDone(state, 'brand');
     await saveState(paths.setupStateJson, state);
-    say(`Brand pack saved to kairos/BRAND.md — everything I write flows from it.`);
+    say(`Brand pack saved to midas/BRAND.md — everything I write flows from it.`);
   }
 
   // ---- Step 3: profile map ----
@@ -201,7 +201,7 @@ async function collectKeysInteractively(state: InterviewState): Promise<CreatorO
   return active.client;
 }
 
-async function stepKey(paths: KairosPaths, state: InterviewState): Promise<CreatorOSClient> {
+async function stepKey(paths: MidasPaths, state: InterviewState): Promise<CreatorOSClient> {
   let client: CreatorOSClient;
 
   const envKey = await resolveApiKey();
@@ -296,7 +296,7 @@ async function stepBrand(): Promise<BrandAnswers> {
 
 async function stepProfiles(
   client: CreatorOSClient,
-  paths: KairosPaths,
+  paths: MidasPaths,
   state: InterviewState,
 ): Promise<SocialAccount[]> {
   say('Profile map — I post to account IDs, so let me confirm each handle.');
@@ -317,11 +317,11 @@ async function stepProfiles(
   );
   markStepDone(state, 'profiles');
   await saveState(paths.setupStateJson, state);
-  say('Profile map saved to kairos/PROFILES.md.');
+  say('Profile map saved to midas/PROFILES.md.');
   return accounts;
 }
 
-async function stepPathway(state: InterviewState, paths: KairosPaths): Promise<void> {
+async function stepPathway(state: InterviewState, paths: MidasPaths): Promise<void> {
   say(
     'First infrastructure call, and it shapes everything after it: where does your automation system live?',
   );
@@ -379,7 +379,7 @@ async function stepPathway(state: InterviewState, paths: KairosPaths): Promise<v
   ).trim();
   if (railwayApiToken) {
     await saveRailwayToken(railwayApiToken);
-    say('Token saved securely to ~/.kairos (never into this repo).');
+    say('Token saved securely to ~/.midas (never into this repo).');
   }
 
   const workerUrl = (
@@ -392,7 +392,7 @@ async function stepPathway(state: InterviewState, paths: KairosPaths): Promise<v
   if (workerUrl) {
     workerToken =
       (await password({
-        message: 'The KAIROS_WORKER_TOKEN you set on that service (blank if you did not set one):',
+        message: 'The MIDAS_WORKER_TOKEN you set on that service (blank if you did not set one):',
         mask: '*',
       })).trim() || undefined;
     process.stdout.write(`Checking the worker at ${workerUrl} ... `);
@@ -403,7 +403,7 @@ async function stepPathway(state: InterviewState, paths: KairosPaths): Promise<v
     } else {
       console.log('unreachable.');
       say(
-        "Couldn't reach /health there — saving it anyway. Check the URL and token, then tell me \"verify my worker\" in chat; kairos/RAILWAY.md has the full checklist.",
+        "Couldn't reach /health there — saving it anyway. Check the URL and token, then tell me \"verify my worker\" in chat; midas/RAILWAY.md has the full checklist.",
       );
     }
   } else {
@@ -419,16 +419,16 @@ async function stepPathway(state: InterviewState, paths: KairosPaths): Promise<v
       ).trim();
 
   if (!workerUrl) {
-    await mkdir(paths.kairosDir, { recursive: true });
-    await writeFile(join(paths.kairosDir, 'RAILWAY.md'), renderRailwayGuide({ timezone, workerToken: workerToken! }), 'utf8');
+    await mkdir(paths.midasDir, { recursive: true });
+    await writeFile(join(paths.midasDir, 'RAILWAY.md'), renderRailwayGuide({ timezone, workerToken: workerToken! }), 'utf8');
     say(
       railwayApiToken
-        ? `Everything on my side is staged: worker auth token generated, deploy plan written to kairos/RAILWAY.md as the reference. The deploy runs AUTOMATICALLY at the end of this setup — a few more questions and you'll watch it build.
+        ? `Everything on my side is staged: worker auth token generated, deploy plan written to midas/RAILWAY.md as the reference. The deploy runs AUTOMATICALLY at the end of this setup — a few more questions and you'll watch it build.
 
-Once it's live: automations you pick in chat land in kairos/automations.json, and I ship changes to the worker with a quick sync each time — you never touch Railway again.`
-        : `Everything I can do without you is done: your worker auth token is generated and the full deploy guide is at kairos/RAILWAY.md — every value pre-filled, ~10 minutes of copy-paste on railway.app. (Shortcut: paste a Railway API token in chat any time and I'll do the whole deploy for you.)
+Once it's live: automations you pick in chat land in midas/automations.json, and I ship changes to the worker with a quick sync each time — you never touch Railway again.`
+        : `Everything I can do without you is done: your worker auth token is generated and the full deploy guide is at midas/RAILWAY.md — every value pre-filled, ~10 minutes of copy-paste on railway.app. (Shortcut: paste a Railway API token in chat any time and I'll do the whole deploy for you.)
 
-How it works once deployed: the worker re-reads kairos/automations.json every 30 seconds, so automations you pick in our chat start running the moment it's live — no restarts, no redeploys, ever. Its /health endpoint (and the dashboard's Automations page) shows the loaded schedule with next-run times. Want a preview first? \`npm run worker\` runs the same thing right here on this machine.`,
+How it works once deployed: the worker re-reads midas/automations.json every 30 seconds, so automations you pick in our chat start running the moment it's live — no restarts, no redeploys, ever. Its /health endpoint (and the dashboard's Automations page) shows the loaded schedule with next-run times. Want a preview first? \`npm run worker\` runs the same thing right here on this machine.`,
     );
   }
 
@@ -445,10 +445,10 @@ How it works once deployed: the worker re-reads kairos/automations.json every 30
 
 async function stepFinish(
   client: CreatorOSClient,
-  paths: KairosPaths,
+  paths: MidasPaths,
   state: InterviewState,
   accounts: SocialAccount[],
-): Promise<KairosConfig> {
+): Promise<MidasConfig> {
   const pathway = state.answers.pathway ?? { automationTarget: 'local' as const, timezone: 'UTC' };
 
   // Hands-free Railway: everything was collected up front, so the deploy
@@ -467,7 +467,7 @@ async function stepFinish(
     if (railwayToken && creatorosKey) {
       // The environment ALWAYS deploys at the end of onboarding — no
       // automations required, no AI credential required. The form never
-      // asks for an AI key; one may still exist in ~/.kairos from a prior
+      // asks for an AI key; one may still exist in ~/.midas from a prior
       // run, and a missing key just means the worker idles until the
       // agent installs one in chat.
       const ai = (await resolveWorkerAiCredential()) ?? null;
@@ -511,10 +511,10 @@ async function stepFinish(
 
   // Persist config + knowledge scaffolding — the durable artifacts.
   const profileId = typeof accounts[0]?.profileId === 'string' ? accounts[0]?.profileId : accounts[0]?.profileId?._id;
-  const config: KairosConfig = {
+  const config: MidasConfig = {
     version: 1,
     mode: state.answers.mode ?? 'creator',
-    // The form never asks about AI — the built-in `kai` chat defaults to
+    // The form never asks about AI — the built-in `midas` chat defaults to
     // Claude and reconfigures itself lazily on first launch if needed.
     brain: { provider: 'claude' },
     automationTarget: pathway.automationTarget,
@@ -533,7 +533,7 @@ async function stepFinish(
   };
   await saveConfig(paths.configJson, config);
 
-  // Install Kairos's skills and knowledge base.
+  // Install Midas's skills and knowledge base.
   await mkdir(paths.knowledgeDir, { recursive: true });
   const skillsTemplate = join(TEMPLATES_DIR, 'skills');
   if (existsSync(skillsTemplate)) {
@@ -564,7 +564,7 @@ Want none of them? Also fine — everything works manually through chat too.`,
     say(
       pathway.railwayTokenSaved
         ? 'Infrastructure: your Railway token is saved, so the deploy is MY job — first thing in chat, say "build my Railway worker" and I\'ll provision the whole environment. Automations you pick are saved either way and start the moment it\'s live.'
-        : 'One infrastructure step remains on your side: deploy the worker with kairos/RAILWAY.md (10 minutes, every value pre-filled) — or hand me a Railway API token in chat and I\'ll do it for you. Automations you pick are saved either way and start the moment it goes live.',
+        : 'One infrastructure step remains on your side: deploy the worker with midas/RAILWAY.md (10 minutes, every value pre-filled) — or hand me a Railway API token in chat and I\'ll do it for you. Automations you pick are saved either way and start the moment it goes live.',
     );
   }
 
@@ -595,19 +595,19 @@ Want none of them? Also fine — everything works manually through chat too.`,
   );
 
   // The handoff: everything answered is now materialized on disk — CLAUDE.md
-  // plus kairos/ — and this prompt makes an agent act on all of it. The form
+  // plus midas/ — and this prompt makes an agent act on all of it. The form
   // never touched an AI; the user's own agent chat takes it from here.
   const setupPrompt = renderSetupPrompt(state);
   await writeFile(
-    join(paths.kairosDir, 'SETUP_PROMPT.md'),
-    `# Initialization Prompt\n\nYour onboarding form is done and the workspace files are written. Open an agent\nchat in this folder — \`claude\`, \`kai\`, or any agent that reads CLAUDE.md — and\nsend this as your first message to get everything initialized:\n\n\`\`\`\n${setupPrompt}\n\`\`\`\n`,
+    join(paths.midasDir, 'SETUP_PROMPT.md'),
+    `# Initialization Prompt\n\nYour onboarding form is done and the workspace files are written. Open an agent\nchat in this folder — \`claude\`, \`midas\`, or any agent that reads CLAUDE.md — and\nsend this as your first message to get everything initialized:\n\n\`\`\`\n${setupPrompt}\n\`\`\`\n`,
     'utf8',
   );
   say(
     `You finished your onboarding form — everything you answered now lives on disk:
   • CLAUDE.md — the briefing any agent in this folder reads automatically
-  • kairos/ — config, brand pack, profile map, skills, knowledge base
-Now send in this prompt to your AI agent and it'll go get everything initialized. Open a chat in this folder — \`claude\`, \`kai\`, whichever agent you run — paste it, and because setup lives in files (not in one chat), you can spin up as many parallel agent sessions as you like. It's also saved to kairos/SETUP_PROMPT.md:\n\n${'─'.repeat(60)}\n${setupPrompt}\n${'─'.repeat(60)}`,
+  • midas/ — config, brand pack, profile map, skills, knowledge base
+Now send in this prompt to your AI agent and it'll go get everything initialized. Open a chat in this folder — \`claude\`, \`midas\`, whichever agent you run — paste it, and because setup lives in files (not in one chat), you can spin up as many parallel agent sessions as you like. It's also saved to midas/SETUP_PROMPT.md:\n\n${'─'.repeat(60)}\n${setupPrompt}\n${'─'.repeat(60)}`,
   );
 
   // The dashboard is the home base — offer it running before the goodbye.
@@ -617,7 +617,7 @@ Now send in this prompt to your AI agent and it'll go get everything initialized
   });
   if (openDash) {
     spawn('npm', ['run', 'dashboard'], { cwd: paths.root, detached: true, stdio: 'ignore' }).unref();
-    say('Dashboard launching — it opens in your browser in a few seconds (http://localhost:4180, `kai dashboard` any time).');
+    say('Dashboard launching — it opens in your browser in a few seconds (http://localhost:4180, `midas dashboard` any time).');
   }
 
   markStepDone(state, 'finish');

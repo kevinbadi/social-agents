@@ -1,46 +1,46 @@
 /**
  * Entry point. npm forwards positional args to the start script:
- *   npm start creatoros kairos   (alias: npm start creatoros kai)
- * First run (no kairos/ setup): the onboarding interview — a pure form, no
- * AI in it. Finishing writes the workspace (CLAUDE.md + kairos/) and hands
+ *   npm start creatoros midas
+ * First run (no midas/ setup): the onboarding interview — a pure form, no
+ * AI in it. Finishing writes the workspace (CLAUDE.md + midas/) and hands
  * the user an initialization prompt for whatever agent chat they open.
- * Every later run: load the saved setup and enter the Kairos REPL.
+ * Every later run: load the saved setup and enter the Midas REPL.
  * Setup is resumable — killing the process mid-interview and re-running
  * resumes where it left off.
  */
 import { existsSync } from 'node:fs';
-import { kairosPaths } from './paths.js';
-import { loadConfig } from './config/kairosConfig.js';
+import { midasPaths } from './paths.js';
+import { loadConfig } from './config/midasConfig.js';
 import { loadState, isInterviewComplete } from './onboarding/state.js';
 import { resolveApiKey } from './config/credentials.js';
 import { CreatorOSClient } from './client/client.js';
 
-export type Route = 'kairos' | 'dashboard' | 'usage';
+export type Route = 'midas' | 'dashboard' | 'usage';
 
-/** Route on positional args: `creatoros kairos`, `creatoros kai`, `creatoros dashboard`. */
+/** Route on positional args: `creatoros midas`, `creatoros dashboard`. */
 export function routeArgs(argv: string[]): Route {
   const args = argv.filter((a) => a !== '--');
   const index = args.indexOf('creatoros');
   if (index === -1) return 'usage';
   const command = (args[index + 1] ?? '').toLowerCase();
-  if (command === 'kairos' || command === 'kai') return 'kairos';
+  if (command === 'midas') return 'midas';
   if (command === 'dashboard') return 'dashboard';
   return 'usage';
 }
 
 export function usage(): string {
   return [
-    'Kairos — the CreatorOS agent.',
+    'Midas — the CreatorOS agent.',
     '',
     'Usage:',
-    '  npm start creatoros kairos    start Kairos (first run = onboarding interview)',
-    '  npm start creatoros kai       same thing, shorter',
-    '  npm start creatoros dashboard the Kairos dashboard — automations, workflows, analytics, chat in the browser',
-    '  kai                           open a session from any terminal (run `npm link` once to enable)',
-    '  kai dashboard                 same dashboard, from anywhere',
+    '  npm start creatoros midas    start Midas (first run = onboarding interview)',
+    '  npm start creatoros midas       same thing, shorter',
+    '  npm start creatoros dashboard the Midas dashboard — automations, workflows, analytics, chat in the browser',
+    '  midas                           open a session from any terminal (run `npm link` once to enable)',
+    '  midas dashboard                 same dashboard, from anywhere',
     '',
     'Sessions are independent conversations — open as many terminals as you like;',
-    'they all share the same kairos/ workspace, brand pack, and credentials.',
+    'they all share the same midas/ workspace, brand pack, and credentials.',
   ].join('\n');
 }
 
@@ -56,13 +56,13 @@ async function main(): Promise<void> {
     return;
   }
 
-  const paths = kairosPaths();
+  const paths = midasPaths();
   const state = await loadState(paths.setupStateJson);
   const setupDone =
-    existsSync(paths.kairosDir) && existsSync(paths.configJson) && isInterviewComplete(state);
+    existsSync(paths.midasDir) && existsSync(paths.configJson) && isInterviewComplete(state);
 
   if (!setupDone) {
-    // First run: CreatorOS animation → Kairos animation → capability
+    // First run: CreatorOS animation → Midas animation → capability
     // checkmarks → the interview. Resumed interviews skip the show.
     if (state.completed.length === 0) {
       const { showIntro } = await import('./ui/banner.js');
@@ -74,11 +74,11 @@ async function main(): Promise<void> {
     // ends here. No agent launches from onboarding: the user opens their
     // own chat(s) and sends the initialization prompt.
     console.log(
-      '\nOnboarding complete. Your workspace is initialized — CLAUDE.md and kairos/ are written.',
+      '\nOnboarding complete. Your workspace is initialized — CLAUDE.md and midas/ are written.',
     );
     console.log(
-      'Open an agent chat in this folder (`claude`, or `kai` for the built-in one) and send the prompt from\n' +
-        'kairos/SETUP_PROMPT.md — the agent initializes everything from there. Sessions share this workspace,\n' +
+      'Open an agent chat in this folder (`claude`, or `midas` for the built-in one) and send the prompt from\n' +
+        'midas/SETUP_PROMPT.md — the agent initializes everything from there. Sessions share this workspace,\n' +
         'so spin up as many in parallel as you like.',
     );
     return;
@@ -87,7 +87,7 @@ async function main(): Promise<void> {
   const apiKey = await resolveApiKey();
   if (!apiKey) {
     console.error(
-      'No CreatorOS API key found. Set CREATOROS_API_KEY or re-run setup (delete kairos/.setup-state.json).',
+      'No CreatorOS API key found. Set CREATOROS_API_KEY or re-run setup (delete midas/.setup-state.json).',
     );
     process.exitCode = 1;
     return;
@@ -98,13 +98,13 @@ async function main(): Promise<void> {
   await runRepl(client, config, paths.root);
 }
 
-/** `kai dashboard` — the same server `npm run dashboard` boots. Zero-config:
+/** `midas dashboard` — the same server `npm run dashboard` boots. Zero-config:
  * missing credentials render a connect state instead of crashing. */
 async function runDashboard(): Promise<void> {
   const { startDashboard, openBrowser } = await import('../dashboard/server.js');
-  const { url } = await startDashboard(kairosPaths().root);
-  console.log(`\nKairos Dashboard → ${url}`);
-  console.log('\x1b[2mAutomations, workflows, brand, training, logs, and Kai chat. Ctrl-C stops it.\x1b[0m');
+  const { url } = await startDashboard(midasPaths().root);
+  console.log(`\nMidas Dashboard → ${url}`);
+  console.log('\x1b[2mAutomations, workflows, brand, training, logs, and Midas chat. Ctrl-C stops it.\x1b[0m');
   openBrowser(url);
   // Keep the process alive until the user stops it.
   await new Promise<void>((resolve) => {
@@ -121,10 +121,10 @@ if (invokedDirectly) {
   main().catch((error) => {
     if ((error as Error).name === 'ExitPromptError') {
       // Ctrl-C mid-interview — state is saved; next run resumes.
-      console.log('\nPaused. Run `npm start creatoros kairos` to pick up where you left off.');
+      console.log('\nPaused. Run `npm start creatoros midas` to pick up where you left off.');
       return;
     }
-    console.error(`Kairos crashed: ${(error as Error).message}`);
+    console.error(`Midas crashed: ${(error as Error).message}`);
     process.exitCode = 1;
   });
 }

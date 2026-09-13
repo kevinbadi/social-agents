@@ -11,7 +11,7 @@
  */
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import type { CreatorOSClient } from '../client/client.js';
-import type { KairosConfig } from '../config/kairosConfig.js';
+import type { MidasConfig } from '../config/midasConfig.js';
 import { hydrateBrain } from '../config/brainSetup.js';
 import { buildSystemPrompt } from '../agent/systemPrompt.js';
 import { buildToolServer } from '../agent/tools.js';
@@ -44,10 +44,10 @@ export const DEFAULT_RUN_TIMEOUT_MS = 20 * 60_000;
 
 export interface HeadlessRunOptions {
   client: CreatorOSClient;
-  config: KairosConfig | null;
+  config: MidasConfig | null;
   workspaceRoot: string;
   skill: string;
-  /** Names the run in the activity log (KAIROS_WORKFLOW). */
+  /** Names the run in the activity log (MIDAS_WORKFLOW). */
   workflow: string;
   /** Per-automation model override — cheap models for engagement runs. */
   model?: string;
@@ -65,7 +65,7 @@ export async function runSkillHeadless(opts: HeadlessRunOptions): Promise<RunOut
   const server = buildToolServer(opts.client, opts.workspaceRoot, opts.config);
   const env: Record<string, string> = {
     ...(process.env as Record<string, string>),
-    KAIROS_WORKFLOW: opts.workflow,
+    MIDAS_WORKFLOW: opts.workflow,
     ...(brain.provider === 'custom'
       ? { ANTHROPIC_BASE_URL: brain.baseUrl, ANTHROPIC_API_KEY: brain.apiKey, ANTHROPIC_MODEL: brain.model }
       : {}),
@@ -73,11 +73,11 @@ export async function runSkillHeadless(opts: HeadlessRunOptions): Promise<RunOut
   // The MCP tool server runs in THIS process — the activity log reads the
   // workflow name from process.env at call time. Runs are serial, so this
   // is race-free; restored in finally.
-  const previousWorkflow = process.env.KAIROS_WORKFLOW;
-  process.env.KAIROS_WORKFLOW = opts.workflow;
+  const previousWorkflow = process.env.MIDAS_WORKFLOW;
+  process.env.MIDAS_WORKFLOW = opts.workflow;
 
   const prompt =
-    `Execute the "${opts.skill}" automation run now. Read kairos/skills/${opts.skill}/SKILL.md and follow ` +
+    `Execute the "${opts.skill}" automation run now. Read midas/skills/${opts.skill}/SKILL.md and follow ` +
     `it end to end, including its verification section. This is an unattended scheduled run — no human is ` +
     `watching, so never wait for confirmation: skip anything that needs sign-off and list it in the report ` +
     `instead. End with a one-paragraph report of what you did, what you verified, and anything that needs the human.`;
@@ -125,8 +125,8 @@ export async function runSkillHeadless(opts: HeadlessRunOptions): Promise<RunOut
   } catch (error) {
     resultError = (error as Error).message;
   } finally {
-    if (previousWorkflow === undefined) delete process.env.KAIROS_WORKFLOW;
-    else process.env.KAIROS_WORKFLOW = previousWorkflow;
+    if (previousWorkflow === undefined) delete process.env.MIDAS_WORKFLOW;
+    else process.env.MIDAS_WORKFLOW = previousWorkflow;
   }
 
   if (timedOut) {

@@ -20,7 +20,7 @@ export default {
 
     if (data.source === 'template') {
       const hint = note('training-template',
-        'Showing the repo’s template playbooks — onboarding installs a copy into kairos/skills/ that the agent actually runs. Edits here change the templates for future installs.');
+        'Showing the repo’s template playbooks — onboarding installs a copy into midas/skills/ that the agent actually runs. Edits here change the templates for future installs.');
       if (hint) root.append(hint);
     }
     if (!data.files.length) {

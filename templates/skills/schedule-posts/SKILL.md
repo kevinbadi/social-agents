@@ -4,7 +4,7 @@ Batch-schedule a content calendar (CSV, spreadsheet, markdown table, or a folder
 
 ## Before anything
 
-Read `kairos/BRAND.md`, `kairos/PROFILES.md`, `kairos/kairos.json` (timezone). If drawing from `content-library/`, respect its ledger (`POSTED.md`).
+Read `midas/BRAND.md`, `midas/PROFILES.md`, `midas/midas.json` (timezone). If drawing from `content-library/`, respect its ledger (`POSTED.md`).
 
 ## The scheduling schema (create_post — know it cold)
 

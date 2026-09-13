@@ -2,32 +2,32 @@ import { describe, expect, it } from 'vitest';
 import { routeArgs, usage } from '../src/index.js';
 
 describe('arg routing', () => {
-  it('routes `creatoros kairos`', () => {
-    expect(routeArgs(['creatoros', 'kairos'])).toBe('kairos');
+  it('routes `creatoros midas`', () => {
+    expect(routeArgs(['creatoros', 'midas'])).toBe('midas');
   });
 
-  it('routes the `kai` alias', () => {
-    expect(routeArgs(['creatoros', 'kai'])).toBe('kairos');
+  it('routes the `midas` alias', () => {
+    expect(routeArgs(['creatoros', 'midas'])).toBe('midas');
   });
 
   it('is case-insensitive on the command', () => {
-    expect(routeArgs(['creatoros', 'Kairos'])).toBe('kairos');
-    expect(routeArgs(['creatoros', 'KAI'])).toBe('kairos');
+    expect(routeArgs(['creatoros', 'Midas'])).toBe('midas');
+    expect(routeArgs(['creatoros', 'MIDAS'])).toBe('midas');
   });
 
   it('tolerates the npm `--` separator', () => {
-    expect(routeArgs(['--', 'creatoros', 'kairos'])).toBe('kairos');
+    expect(routeArgs(['--', 'creatoros', 'midas'])).toBe('midas');
   });
 
   it('falls back to usage for anything else', () => {
     expect(routeArgs([])).toBe('usage');
     expect(routeArgs(['creatoros'])).toBe('usage');
     expect(routeArgs(['creatoros', 'init'])).toBe('usage');
-    expect(routeArgs(['kairos'])).toBe('usage');
+    expect(routeArgs(['midas'])).toBe('usage');
   });
 
   it('usage mentions both invocations', () => {
-    expect(usage()).toContain('creatoros kairos');
-    expect(usage()).toContain('creatoros kai');
+    expect(usage()).toContain('creatoros midas');
+    expect(usage()).toContain('creatoros midas');
   });
 });

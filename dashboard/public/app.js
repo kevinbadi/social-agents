@@ -1,5 +1,5 @@
 /**
- * Kairos Dashboard shell — router, theme, data fetching, shared helpers.
+ * Midas Dashboard shell — router, theme, data fetching, shared helpers.
  *
  * Panels live in panels/ — one file per panel, registered in
  * panels/registry.js. A panel is a plain object:
@@ -76,9 +76,9 @@ export function errorCard(title, error) {
 
 /** Dismissible note; dismissal persists in localStorage by id. */
 export function note(id, text) {
-  if (localStorage.getItem(`kairos-note-${id}`)) return null;
+  if (localStorage.getItem(`midas-note-${id}`)) return null;
   const el = h('div', { class: 'note' }, text,
-    h('button', { class: 'note-x', 'aria-label': 'dismiss', onclick: () => { localStorage.setItem(`kairos-note-${id}`, '1'); el.remove(); } }, '×'));
+    h('button', { class: 'note-x', 'aria-label': 'dismiss', onclick: () => { localStorage.setItem(`midas-note-${id}`, '1'); el.remove(); } }, '×'));
   return el;
 }
 
@@ -166,7 +166,7 @@ for (const panel of panels) {
 document.getElementById('theme-toggle').addEventListener('click', () => {
   const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
   document.documentElement.dataset.theme = next;
-  localStorage.setItem('kairos-theme', next);
+  localStorage.setItem('midas-theme', next);
 });
 
 function activePanel() {
@@ -194,7 +194,7 @@ async function show() {
   if (!panel.fetchData) { paint(null); return; }
 
   // Stale-while-revalidate: cached payload paints instantly, then refresh.
-  const cacheKey = `kairos-cache-${panel.id}`;
+  const cacheKey = `midas-cache-${panel.id}`;
   const cached = localStorage.getItem(cacheKey);
   if (cached) {
     try { paint(JSON.parse(cached)); } catch { /* fall through to spinner */ }

@@ -66,7 +66,7 @@ export function workerRunStats(runs: RunRecord[], automation: string): FlowStats
 
 /**
  * Flows for the worker's scheduled automations — the Railway pathway's
- * answer to cronFlows, built from kairos/automations.json + the worker's
+ * answer to cronFlows, built from midas/automations.json + the worker's
  * own run journal (real outcomes, not inferred from the activity log).
  */
 export function workerCronFlows(automations: WorkerAutomation[], runs: RunRecord[]): Flow[] {

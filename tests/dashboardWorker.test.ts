@@ -44,7 +44,7 @@ describe('worker state fetch degrades, never breaks', () => {
 
   it('healthy worker → reachable with runs, and the token travels as a bearer header', async () => {
     const impl = vi.fn(async (url: string, _init?: RequestInit) =>
-      new Response(JSON.stringify(String(url).endsWith('/runs?limit=60') ? { runs: RUNS } : { service: 'kairos-worker', automations: [], running: null, startedAt: 'x', timezone: 'UTC' }), { status: 200 }));
+      new Response(JSON.stringify(String(url).endsWith('/runs?limit=60') ? { runs: RUNS } : { service: 'midas-worker', automations: [], running: null, startedAt: 'x', timezone: 'UTC' }), { status: 200 }));
     const state = await fetchWorkerState('https://w.example', 'tok', impl as unknown as typeof fetch);
     expect(state.reachable).toBe(true);
     expect(state.runs).toHaveLength(3);

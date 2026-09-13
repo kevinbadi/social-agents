@@ -4,7 +4,7 @@ Create, swap, and monitor comment-to-DM funnels: someone comments a keyword → 
 
 ## Before anything
 
-Read `kairos/BRAND.md` (product links, offer copy, voice), `kairos/PROFILES.md` (profile + account IDs), and `kairos/kairos.json` (`funnel` block: standing keywords, match mode, scope). Never contradict them.
+Read `midas/BRAND.md` (product links, offer copy, voice), `midas/PROFILES.md` (profile + account IDs), and `midas/midas.json` (`funnel` block: standing keywords, match mode, scope). Never contradict them.
 
 ## Procedure — create a funnel
 

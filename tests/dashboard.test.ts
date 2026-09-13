@@ -21,8 +21,8 @@ describe('dashboard routing', () => {
   });
 
   it('chat routes are untouched', () => {
-    expect(routeArgs(['creatoros', 'kairos'])).toBe('kairos');
-    expect(routeArgs(['creatoros', 'kai'])).toBe('kairos');
+    expect(routeArgs(['creatoros', 'midas'])).toBe('midas');
+    expect(routeArgs(['creatoros', 'midas'])).toBe('midas');
     expect(routeArgs(['creatoros', 'nope'])).toBe('usage');
   });
 });
@@ -56,7 +56,7 @@ describe('activity log', () => {
   });
 
   it('appends JSONL and reads newest-first with filters', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'kairos-log-'));
+    const root = await mkdtemp(join(tmpdir(), 'midas-log-'));
     await appendActivity(root, entry({ action: 'reply_to_comment', platform: 'instagram' }));
     await appendActivity(root, entry({ action: 'send_message', platform: 'facebook', outcome: 'failed', error: 'boom' }));
     const raw = await readFile(join(root, 'logs', 'activity.jsonl'), 'utf8');
@@ -102,7 +102,7 @@ describe('activity log', () => {
   });
 
   it('a corrupt log is skipped, never fatal', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'kairos-log-'));
+    const root = await mkdtemp(join(tmpdir(), 'midas-log-'));
     await appendActivity(root, entry({}));
     const { appendFile } = await import('node:fs/promises');
     await appendFile(join(root, 'logs', 'activity.jsonl'), 'not json\n', 'utf8');
@@ -204,7 +204,7 @@ describe('automation flows (n8n-style)', () => {
 describe('agent understanding', () => {
   const BRAND_MD = `# Brand Pack
 
-Kairos reads this before writing anything.
+Midas reads this before writing anything.
 
 ## What this brand is about
 
@@ -304,6 +304,6 @@ describe('dashboard UI shell', () => {
     const chatJs = await readFile(join(pub, 'panels', 'chat.js'), 'utf8');
     const indexHtml = await readFile(join(pub, 'index.html'), 'utf8');
     for (const src of [appJs, chatJs, indexHtml]) expect(src).toContain('creatoros-logo.png');
-    expect(chatJs).toContain('kai is thinking');
+    expect(chatJs).toContain('midas is thinking');
   });
 });

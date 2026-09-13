@@ -1,5 +1,5 @@
 /**
- * Agent — full transparency into what Kairos understands: its persona,
+ * Agent — full transparency into what Midas understands: its persona,
  * its objective and the KPIs it's judged on, how it handles comments
  * and messages, what the account is actually selling, and the literal
  * system prompt it runs on. Every card names the file it comes from, so
@@ -8,7 +8,7 @@
 export default {
   id: 'agent',
   title: 'Agent',
-  subtitle: 'What Kairos understands — persona, goals, KPIs, and the rules it plays by',
+  subtitle: 'What Midas understands — persona, goals, KPIs, and the rules it plays by',
   icon: '◉',
   route: '/agent',
 
@@ -33,14 +33,14 @@ export default {
         card('The agent has no understanding yet',
           h('p', { style: 'margin-bottom:12px' },
             'Persona, goals, and brand knowledge are written during onboarding — nothing exists to show yet:'),
-          h('div', { class: 'code-row' }, h('code', {}, 'npm start creatoros kairos')),
+          h('div', { class: 'code-row' }, h('code', {}, 'npm start creatoros midas')),
         ),
       );
       return;
     }
 
     const hint = note('agent-transparency',
-      'Everything on this page is read live from the files the agent reads — kairos/BRAND.md and kairos/kairos.json. Change a file (Brand and Training pages edit in place) and the agent behaves differently on its very next action.');
+      'Everything on this page is read live from the files the agent reads — midas/BRAND.md and midas/midas.json. Change a file (Brand and Training pages edit in place) and the agent behaves differently on its very next action.');
     if (hint) root.append(hint);
 
     /* ---- Row 1: who the agent is · what it's driving toward ---- */
@@ -56,9 +56,9 @@ export default {
                 voice?.never ? chips([`never ${voice.never}`]) : null,
                 voice?.emojiPolicy ? h('p', { class: 'stat-sub', style: 'margin-top:10px' },
                   `emoji: ${voice.emojiPolicy} · hashtags: ${voice.hashtagPolicy ?? 'unset'}`) : null,
-                srcLine('kairos/kairos.json → engagementAgent', '#/automations'))
+                srcLine('midas/midas.json → engagementAgent', '#/automations'))
             : empty('No persona programmed yet — the engagement agent replies in a generic brand voice until you give it one.',
-                { href: '#/chat', label: 'ask Kai to set one →' }),
+                { href: '#/chat', label: 'ask Midas to set one →' }),
         ),
         card('What it’s driving toward — objective',
           identity
@@ -71,7 +71,7 @@ export default {
                 h('p', { class: 'stat-sub', style: 'margin-top:12px' }, 'Standing mission — the four pillars:'),
                 h('ul', { style: 'margin:6px 0 0 18px;font-size:13px;color:var(--text-3)' },
                   data.mission.map((m) => h('li', {}, m))),
-                srcLine('kairos/kairos.json → engagementAgent.objective', '#/automations'))
+                srcLine('midas/midas.json → engagementAgent.objective', '#/automations'))
             : empty('No objective set — conversations have nowhere to steer.', { href: '#/chat', label: 'set one in chat →' }),
         ),
       ),
@@ -89,7 +89,7 @@ export default {
                 o.link ? h('a', { class: 'meta', href: o.link, target: '_blank', rel: 'noopener' }, o.link) : h('span', { class: 'meta' }, 'no link yet'),
               )))
             : empty('No offers on record — every CTA needs a destination.', { href: '#/brand', label: 'add offers in the brand pack →' }),
-          brand ? srcLine(`${data.brandMeta?.path ?? 'kairos/BRAND.md'} · modified ${timeAgo(data.brandMeta?.mtime)}`, '#/brand') : null,
+          brand ? srcLine(`${data.brandMeta?.path ?? 'midas/BRAND.md'} · modified ${timeAgo(data.brandMeta?.mtime)}`, '#/brand') : null,
         ),
         card('Who we’re talking to',
           brand?.audience
@@ -98,7 +98,7 @@ export default {
                 brand.competitors?.length
                   ? h('div', {}, h('p', { class: 'stat-sub', style: 'margin-top:12px' }, 'watching competitors:'), chips(brand.competitors))
                   : null,
-                srcLine(data.brandMeta?.path ?? 'kairos/BRAND.md', '#/brand'))
+                srcLine(data.brandMeta?.path ?? 'midas/BRAND.md', '#/brand'))
             : empty('No target audience defined yet.', { href: '#/brand', label: 'define it in the brand pack →' }),
         ),
       ),
@@ -133,7 +133,7 @@ export default {
             eng.escalate?.length
               ? h('p', { class: 'stat-sub', style: 'margin-top:12px' }, `always escalated to the human: ${eng.escalate.join(', ')}`)
               : null,
-            srcLine('kairos/kairos.json → autoReplies', '#/automations'))
+            srcLine('midas/midas.json → autoReplies', '#/automations'))
         : empty('Not configured yet.', { href: '#/chat', label: 'turn it on in chat →' }));
 
     root.append(

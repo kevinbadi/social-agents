@@ -1,6 +1,6 @@
 /**
- * First-run intro: the CreatorOS 3D wordmark animation, then the KAIROS
- * wordmark, then an animated checkmark rundown of everything Kai can do.
+ * First-run intro: the CreatorOS 3D wordmark animation, then the MIDAS
+ * wordmark, then an animated checkmark rundown of everything Midas can do.
  * Ported from the CreatorOS CLI banner so the look matches the app exactly.
  *
  * Block glyphs (█) carry an animated truecolor gradient; the box-drawing
@@ -20,7 +20,8 @@ const FONT: Record<string, string[]> = {
   T: ['████████╗', '╚══██╔══╝', '   ██║   ', '   ██║   ', '   ██║   ', '   ╚═╝   '],
   O: [' ██████╗ ', '██╔═══██╗', '██║   ██║', '██║   ██║', '╚██████╔╝', ' ╚═════╝ '],
   S: ['███████╗', '██╔════╝', '███████╗', '╚════██║', '███████║', '╚══════╝'],
-  K: ['██╗  ██╗', '██║ ██╔╝', '█████╔╝ ', '██╔═██╗ ', '██║  ██╗', '╚═╝  ╚═╝'],
+  M: ['███╗   ███╗', '████╗ ████║', '██╔████╔██║', '██║╚██╔╝██║', '██║ ╚═╝ ██║', '╚═╝     ╚═╝'],
+  D: ['██████╗ ', '██╔══██╗', '██║  ██║', '██║  ██║', '██████╔╝', '╚═════╝ '],
   I: ['██╗', '██║', '██║', '██║', '██║', '╚═╝'],
   ' ': ['   ', '   ', '   ', '   ', '   ', '   '],
 };
@@ -32,8 +33,8 @@ const CREATOROS_STOPS: Rgb[] = [
   [225, 232, 240],
   [56, 189, 248],
 ];
-// Kairos palette: amber → warm white → gold (kairos: the opportune moment)
-const KAIROS_STOPS: Rgb[] = [
+// Midas palette: amber → warm white → gold (midas: the opportune moment)
+const MIDAS_STOPS: Rgb[] = [
   [255, 176, 0],
   [255, 244, 214],
   [255, 122, 26],
@@ -51,7 +52,7 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 function isFancy(): boolean {
   return Boolean(
-    process.stdout.isTTY && !process.env.NO_COLOR && !process.env.CI && !process.env.KAIROS_NO_BANNER,
+    process.stdout.isTTY && !process.env.NO_COLOR && !process.env.CI && !process.env.MIDAS_NO_BANNER,
   );
 }
 
@@ -59,7 +60,7 @@ function renderRows(text: string): string[] {
   const rows = Array.from({ length: ROWS }, () => '');
   for (const ch of text) {
     const glyph = FONT[ch];
-    if (!glyph) continue;
+    if (!glyph) throw new Error(`banner font has no glyph for "${ch}"`);
     for (let r = 0; r < ROWS; r++) rows[r] = (rows[r] ?? '') + (glyph[r] ?? '');
   }
   return rows;
@@ -172,8 +173,8 @@ export interface ChecklistSection {
   items: ChecklistItem[];
 }
 
-/** Everything Kai can actually do and has access to — shown on first run. */
-export const KAIROS_CAPABILITY_SECTIONS: ChecklistSection[] = [
+/** Everything Midas can actually do and has access to — shown on first run. */
+export const MIDAS_CAPABILITY_SECTIONS: ChecklistSection[] = [
   {
     heading: 'Posting — every type',
     items: [
@@ -205,8 +206,12 @@ export const KAIROS_CAPABILITY_SECTIONS: ChecklistSection[] = [
     heading: 'Agent skills',
     items: [
       {
+        name: 'Agent Posts',
+        detail: 'drop a finished vertical video — transcript, keyword, captions, cover, slot, scheduled everywhere, DM funnel armed',
+      },
+      {
         name: 'Marketing skills, built in',
-        detail: 'KevBuildsApps ships the best marketing skills + tutorials Kai reads directly',
+        detail: 'KevBuildsApps ships the best marketing skills + tutorials Midas reads directly',
       },
     ],
   },
@@ -245,7 +250,7 @@ export async function showChecklist(sections: ChecklistSection[], heading: strin
   }
 }
 
-// Claude's terracotta, flanked by Kairos amber — the link bar sweeps across it.
+// Claude's terracotta, flanked by Midas amber — the link bar sweeps across it.
 const CLAUDE_STOPS: Rgb[] = [
   [255, 176, 0],
   [230, 150, 100],
@@ -254,7 +259,7 @@ const CLAUDE_STOPS: Rgb[] = [
 const CLAUDE_ORANGE = fg([217, 119, 87]);
 
 /**
- * The brain hookup: an energy link draws from KAIROS to CLAUDE, then
+ * The brain hookup: an energy link draws from MIDAS to CLAUDE, then
  * resolves to the actually-detected auth status.
  */
 export async function showBrainLink(status: BrainStatus): Promise<void> {
@@ -284,7 +289,7 @@ export async function showBrainLink(status: BrainStatus): Promise<void> {
           bar += `${DIM}─${RESET}`;
         }
       }
-      stdout.write(`\r  ${SILVER}KAIROS${RESET} ${bar}${RESET} ${CLAUDE_ORANGE}CLAUDE${RESET}`);
+      stdout.write(`\r  ${SILVER}MIDAS${RESET} ${bar}${RESET} ${CLAUDE_ORANGE}CLAUDE${RESET}`);
       await sleep(26);
     }
     await sleep(180);
@@ -298,13 +303,13 @@ export async function showBrainLink(status: BrainStatus): Promise<void> {
 }
 
 /**
- * The full first-run sequence: CreatorOS animation → Kairos animation →
+ * The full first-run sequence: CreatorOS animation → Midas animation →
  * Claude brain link → capability checkmarks. Runs once, right before the
  * onboarding interview.
  */
 export async function showIntro(): Promise<void> {
   await showWordmark('CREATOR OS', 'the operating system for social media', CREATOROS_STOPS);
-  await showWordmark('KAIROS', 'your CreatorOS agent · posts · replies · reports', KAIROS_STOPS);
+  await showWordmark('MIDAS', 'your CreatorOS agent · posts · replies · reports', MIDAS_STOPS);
   await showBrainLink(detectBrain());
-  await showChecklist(KAIROS_CAPABILITY_SECTIONS, 'what Kai runs for you');
+  await showChecklist(MIDAS_CAPABILITY_SECTIONS, 'what Midas runs for you');
 }

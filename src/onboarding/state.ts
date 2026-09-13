@@ -1,6 +1,6 @@
 /**
  * The interview is resumable: every answer lands on disk the moment it's
- * given. Kill the process mid-interview, re-run `npm start creatoros kairos`,
+ * given. Kill the process mid-interview, re-run `npm start creatoros midas`,
  * and it picks up exactly where it left off.
  */
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
@@ -9,7 +9,7 @@ import { dirname } from 'node:path';
 
 export const INTERVIEW_STEPS = [
   // No AI questions in the form — the interview only collects answers and
-  // materializes files (CLAUDE.md + kairos/). The user's own agent chat
+  // materializes files (CLAUDE.md + midas/). The user's own agent chat
   // picks them up afterwards via the initialization prompt.
   'mode',
   // CreatorOS key first, then the infrastructure call — with both keys in
@@ -57,14 +57,14 @@ export interface InterviewState {
       timezone: string;
       /** Railway worker URL once deployed — optional at interview time. */
       workerUrl?: string;
-      /** Generated for the user; goes into kairos.json + the deploy guide. */
+      /** Generated for the user; goes into midas.json + the deploy guide. */
       workerToken?: string;
       /** Railway service id for dashboard deploy-status checks. */
       railwayServiceId?: string;
-      /** A Railway API token was saved to ~/.kairos — the agent can provision. */
+      /** A Railway API token was saved to ~/.midas — the agent can provision. */
       railwayTokenSaved?: boolean;
       /**
-       * An AI credential for the cloud worker already exists in ~/.kairos
+       * An AI credential for the cloud worker already exists in ~/.midas
        * (from a prior run or the shell env) — never collected by the form;
        * the agent installs one in chat otherwise.
        */

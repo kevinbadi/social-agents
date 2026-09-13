@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { KAIROS_CAPABILITY_SECTIONS, showIntro } from '../src/ui/banner.js';
+import { MIDAS_CAPABILITY_SECTIONS, showIntro } from '../src/ui/banner.js';
 
 describe('first-run intro', () => {
   let lines: string[];
@@ -11,20 +11,20 @@ describe('first-run intro', () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it('plays CreatorOS, Kairos, the Claude brain link, then the capability checkmarks (plain fallback in non-TTY)', async () => {
+  it('plays CreatorOS, Midas, the Claude brain link, then the capability checkmarks (plain fallback in non-TTY)', async () => {
     await showIntro();
     const output = lines.join('\n');
     const creatorosAt = output.indexOf('CREATOR OS');
-    const kairosAt = output.indexOf('KAIROS');
+    const midasAt = output.indexOf('MIDAS');
     const claudeAt = output.indexOf('Claude:');
     const checksAt = output.indexOf('✔');
     expect(creatorosAt).toBeGreaterThanOrEqual(0);
-    expect(kairosAt).toBeGreaterThan(creatorosAt);
-    expect(claudeAt).toBeGreaterThan(kairosAt);
+    expect(midasAt).toBeGreaterThan(creatorosAt);
+    expect(claudeAt).toBeGreaterThan(midasAt);
     expect(checksAt).toBeGreaterThan(claudeAt);
     expect(output).toMatch(/Claude: (connected|not found)/);
     // every capability in every section gets its checkmark line
-    for (const section of KAIROS_CAPABILITY_SECTIONS) {
+    for (const section of MIDAS_CAPABILITY_SECTIONS) {
       expect(output).toContain(section.heading);
       for (const item of section.items) {
         expect(output).toContain(`✔ ${item.name} — ${item.detail}`);
@@ -33,7 +33,7 @@ describe('first-run intro', () => {
   });
 
   it('covers the capability surface: posting types, analytics, messaging matrix, agent skills', () => {
-    const text = KAIROS_CAPABILITY_SECTIONS.map(
+    const text = MIDAS_CAPABILITY_SECTIONS.map(
       (s) => `${s.heading} ${s.items.map((i) => `${i.name} ${i.detail}`).join(' ')}`,
     )
       .join(' ')
@@ -102,4 +102,18 @@ describe('narrow terminals still get the CreatorOS animation', () => {
       logSpy.mockRestore();
     }
   }, 15000);
+});
+
+describe('wordmark font', () => {
+  it('has a glyph for every letter of both wordmarks', async () => {
+    const { showWordmark } = await import('../src/ui/banner.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      // non-TTY: plain fallback, but renderRows still runs and throws on a missing glyph
+      await expect(showWordmark('CREATOR OS', 'x', [[0, 0, 0], [1, 1, 1]])).resolves.toBeUndefined();
+      await expect(showWordmark('MIDAS', 'x', [[0, 0, 0], [1, 1, 1]])).resolves.toBeUndefined();
+    } finally {
+      logSpy.mockRestore();
+    }
+  });
 });

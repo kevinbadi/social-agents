@@ -1,15 +1,15 @@
 /**
- * The whole point: all four pillars running on cron jobs. Kairos delegates
+ * The whole point: all four pillars running on cron jobs. Midas delegates
  * the mechanics (launchd plists on macOS, Docker scaffolds for Railway) to
  * `creatoros automations:create` — it already handles both pathways.
- * Kairos's layer: pick the crons, prepare the pipeline so scheduled runs
+ * Midas's layer: pick the crons, prepare the pipeline so scheduled runs
  * succeed with zero judgment gaps, create, verify, explain.
  */
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import type { AutomationTarget } from '../config/kairosConfig.js';
+import type { AutomationTarget } from '../config/midasConfig.js';
 
 export interface StarterCron {
   name: string;
@@ -73,7 +73,7 @@ export function automationCreateArgs(cron: StarterCron, target: AutomationTarget
 
 /**
  * The creatoros CLI looks for skills at `<cwd>/creatoros/skills/<skill>/SKILL.md`.
- * Kairos's skills live in `kairos/skills/` — write a shim that points the
+ * Midas's skills live in `midas/skills/` — write a shim that points the
  * scheduled agent run at the real playbook.
  */
 export async function ensureCliSkillShim(workspaceRoot: string, skill: string): Promise<string> {
@@ -83,7 +83,7 @@ export async function ensureCliSkillShim(workspaceRoot: string, skill: string): 
     await mkdir(shimDir, { recursive: true });
     await writeFile(
       shimPath,
-      `# ${skill}\n\nRead \`kairos/skills/${skill}/SKILL.md\` in this workspace and execute today's run by its playbook. Read \`kairos/BRAND.md\`, \`kairos/PROFILES.md\`, and \`kairos/kairos.json\` first — never contradict them.\n`,
+      `# ${skill}\n\nRead \`midas/skills/${skill}/SKILL.md\` in this workspace and execute today's run by its playbook. Read \`midas/BRAND.md\`, \`midas/PROFILES.md\`, and \`midas/midas.json\` first — never contradict them.\n`,
       'utf8',
     );
   }
@@ -114,7 +114,7 @@ export function runCreatorosCli(args: string[], cwd: string): Promise<CommandRes
 
 /**
  * Create one automation on the chosen pathway. Railway = one always-on
- * worker reading kairos/automations.json (no per-cron service, no CLI);
+ * worker reading midas/automations.json (no per-cron service, no CLI);
  * local = launchd via the creatoros CLI, shim included.
  */
 export async function createAutomation(
@@ -135,7 +135,7 @@ export async function createAutomation(
       });
       return {
         code: 0,
-        stdout: `${cron.name} saved to kairos/automations.json. A worker running against this workspace picks it up within 30 seconds; a DEPLOYED Railway worker needs a sync — run \`railway up --detach\` (or ask me to) so the change ships.`,
+        stdout: `${cron.name} saved to midas/automations.json. A worker running against this workspace picks it up within 30 seconds; a DEPLOYED Railway worker needs a sync — run \`railway up --detach\` (or ask me to) so the change ships.`,
         stderr: '',
       };
     } catch (error) {

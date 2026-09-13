@@ -27,8 +27,8 @@ export default {
       root.append(
         card('Connect your CreatorOS account',
           h('p', { style: 'margin-bottom:12px' },
-            'Kairos has no CreatorOS API key yet, so there is nothing to monitor. Two minutes fixes that:'),
-          h('div', { class: 'code-row', style: 'margin-bottom:10px' }, h('code', {}, 'npm start creatoros kairos')),
+            'Midas has no CreatorOS API key yet, so there is nothing to monitor. Two minutes fixes that:'),
+          h('div', { class: 'code-row', style: 'margin-bottom:10px' }, h('code', {}, 'npm start creatoros midas')),
           h('p', { style: 'color:var(--text-3);font-size:13.5px' },
             'The onboarding interview collects your API key (CreatorOS app → Settings → API Key), your brand pack, and your automations — then this dashboard lights up.'),
         ),
@@ -55,7 +55,7 @@ export default {
       );
       if (health.stale) {
         root.append(h('div', { class: 'note' },
-          '⚠ Automations are on, but no action has been logged for over 24 hours. Check the Logs page, or ask Kai "are my automations running?" in the chat.'));
+          '⚠ Automations are on, but no action has been logged for over 24 hours. Check the Logs page, or ask Midas "are my automations running?" in the chat.'));
       }
     }
 

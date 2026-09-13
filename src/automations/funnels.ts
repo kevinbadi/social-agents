@@ -3,7 +3,7 @@
  * get a DM with a link/offer. Configured through the CreatorOS comment
  * automation endpoints. Instagram and Facebook only.
  *
- * The DM goes out automatically to strangers — Kairos always confirms the
+ * The DM goes out automatically to strangers — Midas always confirms the
  * exact keyword(s) and DM copy with the human before creating one.
  */
 import type { CommentAutomationBody, DmButton } from '../client/types.js';

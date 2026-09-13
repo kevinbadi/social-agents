@@ -18,11 +18,11 @@ export interface FunnelConfig {
 }
 
 /**
- * Which AI brain Kai thinks with. 'claude' = the user's Claude plan (via
+ * Which AI brain Midas thinks with. 'claude' = the user's Claude plan (via
  * the logged-in claude CLI) or ANTHROPIC_API_KEY. 'custom' = any model
  * behind an Anthropic-compatible API, driven through the same Agent SDK
  * by pointing it at the base URL. The API key for a custom brain lives in
- * ~/.kairos/credentials.json — NEVER here.
+ * ~/.midas/credentials.json — NEVER here.
  */
 export interface BrainSettings {
   provider: 'claude' | 'custom';
@@ -56,9 +56,9 @@ export interface AutoReplyConfig {
 
 /** Where the always-on worker lives, so the dashboard can poll it. */
 export interface WorkerConfig {
-  /** Public URL of the Railway worker service, e.g. https://kairos-worker-x.up.railway.app */
+  /** Public URL of the Railway worker service, e.g. https://midas-worker-x.up.railway.app */
   url?: string;
-  /** Bearer token matching the worker's KAIROS_WORKER_TOKEN. Env KAIROS_WORKER_TOKEN overrides. */
+  /** Bearer token matching the worker's MIDAS_WORKER_TOKEN. Env MIDAS_WORKER_TOKEN overrides. */
   token?: string;
 }
 
@@ -68,7 +68,7 @@ export interface RailwayConfig {
   serviceId?: string;
 }
 
-export interface KairosConfig {
+export interface MidasConfig {
   version: 1;
   /** Agency running client brands, or a creator running their own. */
   mode?: 'creator' | 'agency';
@@ -89,7 +89,7 @@ export interface KairosConfig {
 
 export const DEFAULT_ESCALATION_TOPICS = ['refunds', 'complaints', 'legal'];
 
-export function defaultConfig(): KairosConfig {
+export function defaultConfig(): MidasConfig {
   return {
     version: 1,
     automationTarget: 'local',
@@ -97,18 +97,18 @@ export function defaultConfig(): KairosConfig {
   };
 }
 
-export async function loadConfig(path: string): Promise<KairosConfig | null> {
+export async function loadConfig(path: string): Promise<MidasConfig | null> {
   if (!existsSync(path)) return null;
   const raw = await readFile(path, 'utf8');
-  return JSON.parse(raw) as KairosConfig;
+  return JSON.parse(raw) as MidasConfig;
 }
 
-export async function saveConfig(path: string, config: KairosConfig): Promise<void> {
+export async function saveConfig(path: string, config: MidasConfig): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
 }
 
 /** Resolve the automation pathway. Defaults to local when unset. */
-export function resolveAutomationTarget(config: KairosConfig | null): AutomationTarget {
+export function resolveAutomationTarget(config: MidasConfig | null): AutomationTarget {
   return config?.automationTarget === 'railway' ? 'railway' : 'local';
 }

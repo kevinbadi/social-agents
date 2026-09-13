@@ -1,5 +1,5 @@
 /**
- * The brain chooser + verifier. Kai thinks with Claude by default (plan or
+ * The brain chooser + verifier. Midas thinks with Claude by default (plan or
  * ANTHROPIC_API_KEY); any model behind an Anthropic-compatible API works
  * as a custom brain — same Agent SDK engine, pointed at their base URL.
  * This prompt runs as the FIRST question whenever no Claude connection is
@@ -14,7 +14,7 @@ import {
   type CustomBrain,
 } from '../util/brain.js';
 import { resolveAiApiKey, saveAiApiKey } from './credentials.js';
-import type { BrainSettings } from './kairosConfig.js';
+import type { BrainSettings } from './midasConfig.js';
 
 /** Strip the secret for anything that lands in the workspace. */
 export function toSettings(brain: BrainConfig): BrainSettings {

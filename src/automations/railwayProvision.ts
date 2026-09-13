@@ -4,7 +4,7 @@
  * and pasting a token. Drives the Railway CLI through `npx -y
  * @railway/cli` (no global install), uploads the LOCAL workspace with
  * `railway up --no-gitignore` — plain `railway up` silently DROPS
- * gitignored files, and kairos/ is gitignored, which ships a worker with
+ * gitignored files, and midas/ is gitignored, which ships a worker with
  * no config/skills/automations. With --no-gitignore, .railwayignore is
  * the only exclusion list, so it must carry secrets and junk itself.
  * RAILWAY_DOCKERFILE_PATH points the build at Dockerfile.worker.
@@ -49,7 +49,7 @@ export function provisionVariableArgs(inputs: ProvisionInputs): string[] {
     'variables',
     '--set', `CREATOROS_API_KEY=${inputs.creatorosKey}`,
     ...(inputs.ai ? ['--set', `${inputs.ai.kind}=${inputs.ai.value}`] : []),
-    '--set', `KAIROS_WORKER_TOKEN=${inputs.workerToken}`,
+    '--set', `MIDAS_WORKER_TOKEN=${inputs.workerToken}`,
     '--set', `TZ=${inputs.timezone}`,
     '--set', 'RAILWAY_DOCKERFILE_PATH=Dockerfile.worker',
     '--skip-deploys',
@@ -59,7 +59,7 @@ export function provisionVariableArgs(inputs: ProvisionInputs): string[] {
 /**
  * What NOT to upload. The Docker build installs its own deps — shipping
  * node_modules (~350MB) chokes `railway up`. Everything else (src,
- * kairos/, templates/, content-library/) ships on purpose.
+ * midas/, templates/, content-library/) ships on purpose.
  */
 export const RAILWAY_IGNORE = 'node_modules\n.git\nlogs\ncreatoros\ndeploy\ndist\n.env\n.DS_Store\n*.log\n';
 
@@ -143,7 +143,7 @@ export async function provisionRailwayWorker(
     error: `${step}: ${detail.trim().slice(0, 300) || 'no output'}`,
   });
 
-  const wanted = inputs.projectName ?? 'kairos-worker';
+  const wanted = inputs.projectName ?? 'midas-worker';
 
   // Default is a BRAND-NEW project, no matter what this folder was linked
   // to before — stale attempts and unrelated apps never get deployed onto.
@@ -172,7 +172,7 @@ export async function provisionRailwayWorker(
   onProgress('Uploading this workspace and starting the build (a few minutes)…');
   await ensureRailwayIgnore(root); // with --no-gitignore this is the ONLY exclusion list
   // --no-gitignore is load-bearing: without it railway up drops gitignored
-  // files, and the gitignored kairos/ IS the workspace.
+  // files, and the gitignored midas/ IS the workspace.
   const up = await runner(['up', '--detach', '--no-gitignore'], root, token);
   if (up.code !== 0) return fail('railway up', up.stderr || up.stdout);
 

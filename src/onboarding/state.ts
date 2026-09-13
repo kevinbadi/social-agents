@@ -8,16 +8,11 @@ import { existsSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 export const INTERVIEW_STEPS = [
-  // No AI questions in the form — the interview only collects answers and
-  // materializes files (CLAUDE.md + midas/). The user's own agent chat
-  // picks them up afterwards via the initialization prompt.
+  // The form is two answers and a handoff. No AI questions, no brand
+  // questionnaire, no infrastructure call — those are conversations the
+  // marketing agent has in chat, where it can actually follow up.
   'mode',
-  // CreatorOS key first, then the infrastructure call — with both keys in
-  // hand the finish step can provision Railway and light the dashboard up.
   'key',
-  'pathway',
-  'brand',
-  'profiles',
   'finish',
 ] as const;
 

@@ -207,8 +207,12 @@ scale, automations, comment & DM replies, analytics.
 
 ## Not initialized yet?
 
-\`midas/SETUP_PROMPT.md\` is the initialization brief. If its tasks haven't run
-yet, execute that prompt first — it wires up everything the form collected.
+Onboarding is a two-question form (creator/agency + API key); the real
+briefing happens in chat. If \`midas/BRAND.md\` does not exist, your FIRST job is
+the brand interview — follow \`midas/skills/brand-interview/SKILL.md\`, write the
+file, and get sign-off before writing a single caption.
+\`midas/SETUP_PROMPT.md\` is the full initialization brief (brand, pathway,
+automation menu, analytics read). If its tasks haven't run yet, execute it.
 
 ## The workspace
 
@@ -235,11 +239,17 @@ yet, execute that prompt first — it wires up everything the form collected.
  */
 export function renderSetupPrompt(state: InterviewState): string {
   const pathway = state.answers.pathway;
-  const competitors = state.answers.brand?.competitors ?? [];
+  const brandDone = Boolean(state.answers.brand);
 
-  const tasks: string[] = [
+  const tasks: string[] = [];
+  if (!brandDone) {
+    tasks.push(
+      'Interview me about my brand, one question at a time, following the brand-interview skill: what the brand is about, what I sell and where each offer lives, my voice (three adjectives and one "never"), emoji and hashtag policy, target audience, competitors to watch. Write the result to midas/BRAND.md in that skill\'s format and read it back to me for sign-off. Research any competitors I name and write midas/knowledge/COMPETITORS.md.',
+    );
+  }
+  tasks.push(
     'Verify every connected account is healthy (account_health) and flag anything that needs a reconnect.',
-  ];
+  );
   if (pathway?.automationTarget === 'railway' && !pathway.workerUrl) {
     if (pathway.railwayTokenSaved) {
       const aiNote = pathway.aiCredentialSaved
@@ -253,52 +263,21 @@ export function renderSetupPrompt(state: InterviewState): string {
         'My Railway worker is not deployed yet. Walk me through midas/RAILWAY.md step by step when I am ready — or if I give you a Railway API token, provision it yourself via the provision-railway skill. Once live, save the URL to midas/midas.json under worker.url.',
       );
     }
+  } else if (pathway?.automationTarget !== 'railway') {
+    tasks.push(
+      'Ask me where my automations should live: local (this machine, must be awake at scheduled times) or Railway (an always-on cloud worker you build for me from a Railway API token, via the provision-railway skill — recommended for anyone who wants replies answered the moment they land). Save automationTarget and timezone to midas/midas.json. Local is a fine answer.',
+    );
   }
   tasks.push(
     `Onboarding set up ZERO automations on purpose — I pick my own set. Walk me through the menu one item at a time and ask what I want: auto-replies to comments and DMs (with a persona I define), comments-to-DM funnels, scheduled content posting, recurring analytics reports. Set up ONLY what I approve on the ${pathway?.automationTarget ?? 'local'} pathway, confirm exact copy with me before anything goes live, save the choices to midas/midas.json, and verify with list_funnels / list_cron_automations. "None for now" is a valid answer — don't push.`,
   );
-  if (competitors.length > 0) {
-    tasks.push(
-      `Research my competitors (${competitors.join(', ')}) — content mix, cadence, hooks, gaps — and write midas/knowledge/COMPETITORS.md.`,
-    );
-  }
   tasks.push(
     'Pull follower stats and recent post analytics, then give me an honest state-of-the-socials read with ONE recommended first move.',
   );
 
-  return `Read midas/midas.json, midas/BRAND.md, and midas/PROFILES.md first — they hold everything I answered during setup. Then, in order:
+  return `Read midas/midas.json and midas/PROFILES.md first${brandDone ? ', and midas/BRAND.md' : ''} — they hold what setup collected. Then, in order:
 
 ${tasks.map((task, index) => `${index + 1}. ${task}`).join('\n')}
 
 Confirm anything that publishes or DMs strangers with me before it goes live. Report what you did, what you verified, and what's left.`;
-}
-
-/** The onboarding summary Midas delivers in character at the finish. */
-export function renderSetupSummary(state: InterviewState): string {
-  const brand = state.answers.brand;
-  const pathway = state.answers.pathway;
-  const lines: string[] = [];
-  if (brand) {
-    lines.push(
-      `Brand: ${brand.about.slice(0, 120)}${brand.about.length > 120 ? '…' : ''}`,
-      `Voice: ${brand.voiceAdjectives.join(', ')} — never ${brand.voiceNever}.`,
-      `Audience: ${brand.audience}`,
-    );
-  }
-  if (state.answers.profiles) {
-    lines.push(`Accounts mapped: ${state.answers.profiles.map((p) => `${p.platform}:@${p.username}`).join(', ')}`);
-  }
-  lines.push(
-    'Automations: none yet, by design — pick yours in chat (auto-replies, comments-to-DM funnels, scheduled posting, analytics reports).',
-  );
-  if (pathway) {
-    const workerNote =
-      pathway.automationTarget === 'railway'
-        ? pathway.workerUrl
-          ? ` — worker connected at ${pathway.workerUrl}`
-          : ' — worker not deployed yet; midas/RAILWAY.md has the 10-minute guide'
-        : '';
-    lines.push(`Automation pathway: ${pathway.automationTarget} (${pathway.timezone})${workerNote}.`);
-  }
-  return lines.join('\n');
 }

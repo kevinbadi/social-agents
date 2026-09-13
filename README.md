@@ -18,13 +18,13 @@ The end state Midas drives toward: all four pillars on cron jobs — content pos
 
 # 2. All the form needs is your CreatorOS API key
 #    (CreatorOS iOS app → Settings → API Key, sk_...).
-#    No AI setup, no model keys — the form is a pure questionnaire.
+#    No AI setup, no model keys — two questions and you're in.
 
 # 3. Go.
 npm start creatoros midas
 ```
 
-**First run** is the onboarding form — no AI in it. Midas collects your API key (masked, validated live), your brand pack, your profile map, and your automation pathway, then writes the whole workspace to disk: `CLAUDE.md` at the root plus `midas/`. Finishing hands you an **initialization prompt** (also saved to `midas/SETUP_PROMPT.md`) — open any agent chat in this folder (`claude`, the built-in `midas`, whichever agent you run) and send it; the agent initializes everything from there. Because setup lives in files, not in one chat, you can spin up as many parallel agent sessions as you like. Kill the form any time; it resumes exactly where you left off.
+**First run** is a two-question form: creator or agency, then your CreatorOS API key (masked, validated live). It maps your connected accounts into `midas/PROFILES.md`, writes the workspace (`CLAUDE.md` at the root plus `midas/`), and tells you to go talk to your marketing agent. The agent takes it from there in chat: it interviews you about your brand (`brand-interview` skill → `midas/BRAND.md`), asks where automations should live (local or a Railway worker it builds for you), and offers the automation menu. Any agent opened in this folder reads `CLAUDE.md` and picks up the same brief; `midas/SETUP_PROMPT.md` holds it as a paste-able prompt. Because setup lives in files, not in one chat, you can spin up as many parallel agent sessions as you like.
 
 For the agent chat itself you bring a brain: logged-in Claude Code (runs on your Claude plan, recommended), `ANTHROPIC_API_KEY`, or any model behind an Anthropic-compatible API (Moonshot/Kimi, DeepSeek, GLM…) — the built-in `midas` chat asks on first launch.
 

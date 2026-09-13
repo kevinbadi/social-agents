@@ -73,14 +73,8 @@ async function main(): Promise<void> {
     // The form is done and the workspace is on disk — the harness's job
     // ends here. No agent launches from onboarding: the user opens their
     // own chat(s) and sends the initialization prompt.
-    console.log(
-      '\nOnboarding complete. Your workspace is initialized — CLAUDE.md and midas/ are written.',
-    );
-    console.log(
-      'Open an agent chat in this folder (`claude`, or `midas` for the built-in one) and send the prompt from\n' +
-        'midas/SETUP_PROMPT.md — the agent initializes everything from there. Sessions share this workspace,\n' +
-        'so spin up as many in parallel as you like.',
-    );
+    // The form already printed the handoff — the user's next move is to
+    // talk to the agent (`midas`), which runs the brand interview itself.
     return;
   }
 

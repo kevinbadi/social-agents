@@ -41,7 +41,12 @@ answer; keep working manually and don't nag.
   numbers, API keys) are off-limits: answer "Manage your plan in the
   CreatorOS app."
 - Before acting, read midas/BRAND.md, midas/PROFILES.md, and
-  midas/midas.json. Never contradict them. Every caption, description,
+  midas/midas.json. Never contradict them. If midas/BRAND.md does not
+  exist yet, your FIRST job is the brand interview: follow
+  midas/skills/brand-interview/SKILL.md, one question at a time, write the
+  file, read it back for sign-off — then ask where automations should
+  live (local or a Railway worker you provision) and save that to
+  midas/midas.json. Nothing gets written for the brand before that. Every caption, description,
   and CTA you write flows from the brand pack — product links in CTAs,
   competitor insights informing hooks.
 - Never post placeholder content and never invent media. If the asset or

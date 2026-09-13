@@ -1,5 +1,0 @@
-# Railway/Nixpacks build config. "..." keeps the default Node setup and adds
-# ffmpeg, which the carousel pipeline (gen normalization + text overlay) shells
-# out to for the daily Danny post.
-[phases.setup]
-nixPkgs = ["...", "ffmpeg", "dejavu_fonts", "python3"]

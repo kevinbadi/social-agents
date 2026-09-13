@@ -136,7 +136,7 @@ Note: plain scheduled *posts* need no cron at all — scheduled publishing happe
 
 ### Agent Posts
 
-The `agent-posts` skill (`templates/skills/agent-posts/`, installed into `midas/skills/`) is the drop-a-video pipeline: transcript, "comment X" keyword, platform captions, a branded 9:16 cover, the next free 3pm/6pm/9pm/12am ET slot, scheduling to every connected social, and the comment-to-DM funnel armed. It runs on the same CreatorOS API key onboarding saves — `node midas/skills/agent-posts/scripts/check-setup.mjs` verifies the key live and lists connected socials. The pipeline itself needs its own Postgres, media storage, LLM gateway, and fal credentials; `references/ENV_VARS.txt` in the skill lists them and `references/WORKFLOW.md` is the walkthrough.
+The `agent-posts` skill is the drop-a-video pipeline, and it runs entirely through the agent's CreatorOS tools — no database, no hosted service. Hand Midas a finished vertical video and it transcribes it locally (whisper), pulls the spoken "comment X" keyword, writes on-brand captions for every platform from `BRAND.md`, builds a 9:16 cover (a real frame by default, a generated scene if you opt into fal with your own identity photos), uploads once, and schedules one post to every connected social. Cadence is your CreatorOS queue: the agent posts in queue mode and never computes slots itself, so posting frequency is whatever you set in the app, and your post history page is the schedule. With your sign-off it arms the comment-to-DM funnel on Instagram and Facebook. `node midas/skills/agent-posts/scripts/check-setup.mjs` verifies the key, the connected socials, ffmpeg, and whisper.
 
 ## Teaching Midas new patterns
 

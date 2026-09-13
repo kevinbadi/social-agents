@@ -207,7 +207,7 @@ export const MIDAS_CAPABILITY_SECTIONS: ChecklistSection[] = [
     items: [
       {
         name: 'Agent Posts',
-        detail: 'drop a finished vertical video — transcript, keyword, captions, cover, slot, scheduled everywhere, DM funnel armed',
+        detail: 'drop a finished vertical video — transcript, keyword, captions, cover, queued to every social, DM funnel armed',
       },
       {
         name: 'Marketing skills, built in',

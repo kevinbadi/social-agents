@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
  * Vertical 9:16 Reel/Shorts cover: fal scene (identity + style refs) then
- * ffmpeg burns the two-line hook. Run from creator-os with --env-file=.env.local
+ * ffmpeg burns the two-line hook. Run from the Midas workspace root.
  */
 import fs from "node:fs";
 import { createRequire as __cr } from "node:module";
-const { assertFal } = __cr(import.meta.url)("../../lib/fal-gate.js");
+const { assertFal } = __cr(import.meta.url)("../../lib/fal-gate.cjs");
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
@@ -15,10 +15,19 @@ import { draftPack, logosFromTranscript } from "./caption.mjs";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SKILL = path.resolve(HERE, "..");
 const CLAUDE = path.resolve(SKILL, "../..");
-const IDENTITY = [
-  path.join(SKILL, "assets/kevbuildsapps-clean-a.png"),
-  path.join(SKILL, "assets/kevbuildsapps-clean-b.png"),
-];
+// Identity references belong to the user, not the skill: two or more clean
+// photos of the creator in midas/assets/identity/*.png (override the folder
+// with AGENT_POSTS_IDENTITY_DIR). An optional identity.txt beside them
+// describes the person in one or two sentences for the scene prompt. With no
+// references the cover is built from a real video frame instead of a fal scene.
+const IDENTITY_DIR = path.resolve(process.env.AGENT_POSTS_IDENTITY_DIR || "midas/assets/identity");
+const IDENTITY = fs.existsSync(IDENTITY_DIR)
+  ? fs.readdirSync(IDENTITY_DIR).filter((f) => /\.(png|jpe?g)$/i.test(f)).sort().map((f) => path.join(IDENTITY_DIR, f))
+  : [];
+const IDENTITY_TEXT = (() => {
+  const f = path.join(IDENTITY_DIR, "identity.txt");
+  return fs.existsSync(f) ? fs.readFileSync(f, "utf8").replace(/\s+/g, " ").trim() : "";
+})();
 const STYLE = path.join(SKILL, "assets/style-ref.png");
 const FONT_CANDIDATES = [
   "/System/Library/Fonts/Supplemental/Arial Black.ttf",
@@ -34,6 +43,10 @@ try {
 } catch (e) {
   FAL_OK = false;
   console.warn(`[fal-gate] ${e.message} -> using real-frame cover fallback`);
+}
+if (FAL_OK && IDENTITY.length < 2) {
+  FAL_OK = false;
+  console.warn(`[identity] fewer than 2 reference photos in ${IDENTITY_DIR} -> using real-frame cover fallback`);
 }
 const FAL_KEY = process.env.FAL_KEY;
 const W = 1080;
@@ -320,19 +333,15 @@ function scenePrompt({ line1, line2, logos, pose }) {
     : "orange circuit nodes and abstract 3D tech orbs, no product wordmarks";
   return [
     "Vertical 9:16 photorealistic social-media video thumbnail, 1080x1920.",
-    "The man is the SAME PERSON as images 1 and 2 (identity lock): tan complexion,",
-    "dark thick eyebrows, dark brown eyes, clean-shaven cheeks, neat dark mustache,",
-    "light chin stubble only (not a full beard). Backwards baseball cap with the",
-    "Nike strap on his forehead (cap color may be black, grey, or green).",
-    "Flattering thumbnail glow-up of THAT same man, not a different person:",
-    "more handsome, sharper jawline, clearer skin, brighter catchlights in the eyes,",
-    "defined athletic-muscular shoulders chest and arms",
-    "in a fitted tank, gym-lean but still clearly him. Studio beauty lighting.",
+    "The person is the SAME PERSON as images 1 and 2 (identity lock): keep the",
+    "face, skin tone, hair, facial hair, and clothing style exactly.",
+    IDENTITY_TEXT || "Flattering thumbnail glow-up of THAT same person, not a different one:",
+    "sharper, clearer skin, brighter catchlights in the eyes. Studio beauty lighting.",
     "Ignore the room, microphone, and furniture from the identity photos.",
     "Copy the LAYOUT of the LAST image only for framing, logos-around-head, and",
     "background: medium close-up, black office chair behind, dark tech background",
     "with orange/gold circuit glow.",
-    "The last image is a DIFFERENT man. Do NOT copy his face, ethnicity, or pose.",
+    "The last image is a DIFFERENT person. Do NOT copy their face, ethnicity, or pose.",
     "BANNED unless the pose below explicitly asks: thumb on chin, fist on chin,",
     "hand on cheek, thinker / chin-rest pose. Those are the style-ref, not him.",
     "ALSO BANNED always: prayer hands / namaste (both palms pressed together),",

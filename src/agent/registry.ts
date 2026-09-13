@@ -149,6 +149,23 @@ export function buildToolRegistry(
       (a) => run(() => client.deletePost(a.postId as string)),
     ),
     t(
+      'update_post',
+      'Update a draft or scheduled post: content, per-platform customContent, mediaItems, scheduledFor/timezone, or publishNow. ALWAYS pass the full mediaItems again (including the cover thumbnail) — the update replaces them, and a missing thumbnail drops the Instagram cover. Verify with get_post afterwards.',
+      {
+        postId: z.string(),
+        content: z.string().optional(),
+        title: z.string().optional(),
+        platforms: z.array(platformTarget).optional(),
+        mediaItems: z.array(mediaItem).optional(),
+        scheduledFor: z.string().optional(),
+        timezone: z.string().optional(),
+        publishNow: z.boolean().optional(),
+        hashtags: z.array(z.string()).optional(),
+        tags: z.array(z.string()).optional(),
+      },
+      ({ postId, ...body }) => run(() => client.updatePost(postId as string, body as Partial<CreatePostBody>)),
+    ),
+    t(
       'update_youtube_metadata',
       'Update title/description/tags/visibility of a published YouTube video.',
       {

@@ -144,7 +144,7 @@ From this folder:
 npx -y @railway/cli login
 npx -y @railway/cli init --name midas-worker
 npx -y @railway/cli variables \\
-  --set "CREATOROS_API_KEY=<your CreatorOS API key — CreatorOS app → Settings → API Key>" \\
+  --set "CREATOROS_API_KEY=<your CreatorOS API key — https://www.creatoros.ca/ → Settings → API key>" \\
   --set "ANTHROPIC_API_KEY=<your Anthropic key — or set CLAUDE_CODE_OAUTH_TOKEN from claude setup-token instead>" \\
   --set "MIDAS_WORKER_TOKEN=${opts.workerToken}" \\
   --set "TZ=${opts.timezone}" \\

@@ -1,6 +1,6 @@
 # Midas
 
-**Midas is an open-source agentic harness for [CreatorOS](https://creatoros.app) — it runs your entire social presence.** You subscribe in the CreatorOS iOS app, connect your socials, grab your API key, and Midas takes it from there: an onboarding interview that captures your brand, then an agent that posts, replies, reports, and automates on your behalf.
+**Midas is an open-source marketing agent that runs your entire social presence on [CreatorOS](https://www.creatoros.ca/).** CreatorOS is the service underneath: it holds your connected socials and does the actual posting, replying, and analytics. Midas is the agent that drives it. You sign up at [creatoros.ca](https://www.creatoros.ca/), connect your socials, copy your API key, and Midas takes it from there: a two-question setup, then an agent that interviews you about your brand and posts, replies, reports, and automates on your behalf.
 
 Midas's mission is simple: **hold your hand through setup, then make you autonomous.** Every client's setup is different, but everyone wants the same four things:
 
@@ -16,8 +16,9 @@ The end state Midas drives toward: all four pillars on cron jobs — content pos
 ```sh
 # 1. Fork & clone. (No npm install needed — first start installs for you.)
 
-# 2. All the form needs is your CreatorOS API key
-#    (CreatorOS iOS app → Settings → API Key, sk_...).
+# 2. All the form needs is your CreatorOS API key:
+#    sign up at https://www.creatoros.ca/, connect at least one social,
+#    then Settings → API key (sk_...).
 #    No AI setup, no model keys — two questions and you're in.
 
 # 3. Go.

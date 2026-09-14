@@ -18,7 +18,7 @@ const ONBOARD = `
   Agent Posts posts through your CreatorOS API key, the same key Midas
   onboarding asks for.
 
-    1. Go to https://www.creatoros.ca/ (or the CreatorOS iOS app) and sign in.
+    1. Go to https://www.creatoros.ca/ and sign in (sign up first if you are new).
     2. Open Settings -> API key and copy it.
     3. Run Midas onboarding (npm start creatoros midas) and paste it there, or
        export CREATOROS_API_KEY=<your key> in your shell.

@@ -172,7 +172,7 @@ async function healthPayload(session: Session): Promise<unknown> {
             present: true,
             valid,
             maskedKey: session.client.maskedKey,
-            ...(valid ? {} : { error: 'CreatorOS rejected the key — check it in the CreatorOS app under Settings → API Key.' }),
+            ...(valid ? {} : { error: 'CreatorOS rejected the key — copy it again from https://www.creatoros.ca/ (Settings → API key).' }),
           },
         };
       } catch (error) {

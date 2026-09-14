@@ -48,7 +48,13 @@ export async function runInterview(root: string = process.cwd()): Promise<Interv
   say(
     resuming
       ? `Midas here — picking up where we left off. ${state.completed.length} step(s) already done.`
-      : "Hey — I'm Midas, your marketing agent on CreatorOS. Two quick things and you're in: creator or agency, and your CreatorOS API key. Everything else we figure out together in chat.",
+      : `Hey — I'm Midas, your marketing agent. Two quick things and you're in: creator or agency, and your CreatorOS API key. Everything else we figure out together in chat.
+
+What CreatorOS is: the service I run on. It holds your connected socials and does the actual posting, replying, and analytics — I'm the agent that drives it. You need one thing from it, an API key:
+  1. Sign up at ${GET_KEY_URL}
+  2. Connect at least one social account there
+  3. Settings → API key → copy it
+Don't have it yet? Say no at the key question and I'll stop here; run me again when you do and we pick up where we left off.`,
   );
 
   // ---- Creator or agency ----
@@ -83,7 +89,7 @@ async function collectValidKey(promptMessage: string): Promise<{ key: string; cl
     const key = (await password({ message: promptMessage, mask: '*' })).trim();
     if (!isValidKeyShape(key)) {
       console.log(
-        "That doesn't look like a CreatorOS API key (expected sk_ + 64 hex characters). Check the CreatorOS app under Settings → API Key.",
+        `That doesn't look like a CreatorOS API key (expected sk_ + 64 hex characters). Copy it from ${GET_KEY_URL} under Settings → API key.`,
       );
       continue;
     }
@@ -91,7 +97,7 @@ async function collectValidKey(promptMessage: string): Promise<{ key: string; cl
     process.stdout.write(`Checking ${maskKey(key)} against CreatorOS servers... `);
     const valid = await client.validateKey();
     if (!valid) {
-      console.log('rejected. Double-check it in the CreatorOS app and paste it again.');
+      console.log(`rejected. Double-check it at ${GET_KEY_URL} (Settings → API key) and paste it again.`);
       continue;
     }
     console.log('valid.');
@@ -100,7 +106,7 @@ async function collectValidKey(promptMessage: string): Promise<{ key: string; cl
 }
 
 const MAX_AGENCY_KEYS = 10;
-const GET_KEY_URL = 'https://creatoros.ca';
+const GET_KEY_URL = 'https://www.creatoros.ca/';
 
 /** Creator: one key. Agency: up to 10 keys, pick who we set up now. */
 async function collectKeysInteractively(state: InterviewState): Promise<CreatorOSClient> {
@@ -110,7 +116,7 @@ async function collectKeysInteractively(state: InterviewState): Promise<CreatorO
     default: true,
   });
   if (!hasKeys) {
-    say(`Get it at ${GET_KEY_URL} — then run me again and we pick up right here.`);
+    say(`No problem. Get it at ${GET_KEY_URL}: sign up, connect at least one social, then Settings → API key. Run me again and we pick up right here.`);
     process.exit(0);
   }
 
@@ -190,7 +196,13 @@ async function stepKey(paths: MidasPaths, state: InterviewState): Promise<Creato
       console.log(`  • ${platformLabel(account.platform)}  @${account.username ?? '?'}${healthNote}`);
     }
     if (accounts.length === 0) {
-      say('No accounts connected yet — connect them in the CreatorOS app, then re-run me. Continuing setup anyway.');
+      // Without a connected social there is nothing to post to and nothing
+      // to map — stop here (the key step stays undone, so the re-run lands
+      // right back on this check without re-asking for the key).
+      say(
+        `Your key works, but no social accounts are connected yet, so there is nothing for me to run. Connect TikTok, Instagram, YouTube, or X at ${GET_KEY_URL}, then run me again — we pick up right here.`,
+      );
+      process.exit(0);
     }
     markStepDone(state, 'key');
     await saveState(paths.setupStateJson, state);

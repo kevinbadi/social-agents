@@ -30,7 +30,7 @@ export default {
             'Midas has no CreatorOS API key yet, so there is nothing to monitor. Two minutes fixes that:'),
           h('div', { class: 'code-row', style: 'margin-bottom:10px' }, h('code', {}, 'npm start creatoros midas')),
           h('p', { style: 'color:var(--text-3);font-size:13.5px' },
-            'The onboarding interview collects your API key (CreatorOS app → Settings → API Key), your brand pack, and your automations — then this dashboard lights up.'),
+            'The onboarding interview collects your API key (https://www.creatoros.ca/ → Settings → API key), your brand pack, and your automations — then this dashboard lights up.'),
         ),
       );
       return;

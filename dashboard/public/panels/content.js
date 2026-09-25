@@ -26,7 +26,7 @@ export default {
     root.append(
       h('div', { class: 'card-solid', style: 'text-align:center;padding:48px 24px;margin-bottom:16px' },
         h('img', { src: '/assets/creatoros-logo.png', alt: '', style: 'width:64px;height:64px;object-fit:contain;margin-bottom:16px' }),
-        h('h2', { style: 'font-size:26px;letter-spacing:-0.02em;margin-bottom:8px;text-transform:none' }, 'Content is coming in Midas v1.1'),
+        h('h2', { style: 'font-size:26px;letter-spacing:-0.02em;margin-bottom:8px;text-transform:none' }, 'Content is coming in Social Agents v1.1'),
         h('p', { style: 'color:var(--text-3);max-width:52ch;margin:0 auto' },
           'The engagement engine shipped first. Next release, creating and shipping content at scale gets this page — library, calendar, and the workflows below.'),
         h('div', { style: 'margin-top:16px' }, badge('v1.1', 'pending')),
@@ -39,7 +39,7 @@ export default {
           h('p', { style: 'color:var(--text-3);font-size:13.5px;margin-top:6px' }, desc),
         ))),
       h('p', { class: 'stat-sub', style: 'margin-top:16px' },
-        'Impatient? Most of this already works through chat — ask Midas to "schedule the week from content-library/" or "post this clip everywhere" today.'),
+        'Impatient? Most of this already works through chat — ask Social Agents to "schedule the week from content-library/" or "post this clip everywhere" today.'),
     );
   },
 };

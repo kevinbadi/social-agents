@@ -1,14 +1,14 @@
 {
-  "name": "midas",
+  "name": "social-agents",
   "version": "0.1.0",
-  "description": "Midas — the open-source CreatorOS agent harness. Runs your entire social presence: posting at scale, automations, comment & DM replies, analytics.",
+  "description": "Social Agents — the open-source CreatorOS agent harness. Runs your entire social presence: posting at scale, automations, comment & DM replies, analytics.",
   "type": "module",
   "license": "MIT",
   "engines": {
     "node": ">=20"
   },
   "bin": {
-    "midas": "bin/midas.mjs"
+    "social-agents": "bin/social-agents.mjs"
   },
   "scripts": {
     "prestart": "node scripts/ensure-deps.mjs",
@@ -23,7 +23,7 @@
   },
   "keywords": [
     "creatoros",
-    "midas",
+    "social-agents",
     "social-media",
     "ai-agent",
     "agent-harness",
@@ -32,12 +32,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/kevinbadi/midas"
+    "url": "https://github.com/kevinbadi/social-agents"
   },
   "bugs": {
-    "url": "https://github.com/kevinbadi/midas/issues"
+    "url": "https://github.com/kevinbadi/social-agents/issues"
   },
-  "homepage": "https://github.com/kevinbadi/midas#readme",
+  "homepage": "https://github.com/kevinbadi/social-agents#readme",
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.3.0",
     "@creatoros/cli": "^0.1.7",

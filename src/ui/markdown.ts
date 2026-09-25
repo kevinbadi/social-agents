@@ -1,5 +1,5 @@
 /**
- * Terminal rendering for Midas's replies. The system prompt tells the model
+ * Terminal rendering for Social Agents' replies. The system prompt tells the model
  * to write plain text, but models drift into Markdown — and raw asterisks
  * in a chat look broken. Convert the common constructs to ANSI styling;
  * never show literal ** or # to the user.

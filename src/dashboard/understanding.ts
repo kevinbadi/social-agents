@@ -5,7 +5,7 @@
  * actually selling. Everything here is read from the same files the
  * agent reads — full transparency, nothing invented.
  */
-import type { MidasConfig, EngagementObjective } from '../config/midasConfig.js';
+import type { SocialAgentsConfig, EngagementObjective } from '../config/socialAgentsConfig.js';
 import type { ActivitySummary } from '../util/activityLog.js';
 
 export interface BrandUnderstanding {
@@ -17,7 +17,7 @@ export interface BrandUnderstanding {
 }
 
 /**
- * Parse midas/BRAND.md (the renderBrandMd format) back into structure.
+ * Parse social-agents/BRAND.md (the renderBrandMd format) back into structure.
  * Tolerant of edits: sections are matched by heading prefix, and anything
  * unrecognized simply comes back null — the UI shows "not set" honestly.
  */
@@ -103,7 +103,7 @@ export interface Kpi {
  * log. Universal engagement KPIs plus a north-star framed by the
  * configured objective.
  */
-export function deriveKpis(config: MidasConfig | null, summary: ActivitySummary): Kpi[] {
+export function deriveKpis(config: SocialAgentsConfig | null, summary: ActivitySummary): Kpi[] {
   const { week, today } = summary;
   const attempted = week.actions;
   const failRate = attempted ? Math.round((week.failed / attempted) * 100) : 0;

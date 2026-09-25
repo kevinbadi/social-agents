@@ -1,20 +1,20 @@
 /**
  * The API key never lands in any repo file. Interactive keys are persisted
- * to ~/.midas/credentials.json (mode 0600); CREATOROS_API_KEY always wins.
+ * to ~/.social-agents/credentials.json (mode 0600); CREATOROS_API_KEY always wins.
  */
 import { mkdir, readFile, writeFile, chmod } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-const CREDENTIALS_DIR = join(homedir(), '.midas');
+const CREDENTIALS_DIR = join(homedir(), '.social-agents');
 const CREDENTIALS_PATH = join(CREDENTIALS_DIR, 'credentials.json');
-// Pre-rename installs saved under ~/.kairos; read from there until the first save migrates them.
-const LEGACY_CREDENTIALS_PATH = join(homedir(), '.kairos', 'credentials.json');
+// Pre-rename installs saved under ~/.midas (or ~/.kairos before that); read from there until the first save migrates them.
+const LEGACY_CREDENTIALS_PATHS = ['.midas', '.kairos'].map((dir) => join(homedir(), dir, 'credentials.json'));
 
 function credentialsPath(): string {
-  if (existsSync(CREDENTIALS_PATH) || !existsSync(LEGACY_CREDENTIALS_PATH)) return CREDENTIALS_PATH;
-  return LEGACY_CREDENTIALS_PATH;
+  if (existsSync(CREDENTIALS_PATH)) return CREDENTIALS_PATH;
+  return LEGACY_CREDENTIALS_PATHS.find((path) => existsSync(path)) ?? CREDENTIALS_PATH;
 }
 
 export async function resolveApiKey(): Promise<string | null> {

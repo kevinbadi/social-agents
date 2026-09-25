@@ -2,7 +2,7 @@
  * Strict 5-field cron parsing and next-run calculation for the worker's
  * in-process scheduler. Supports numbers, ranges (1-5), lists (9,15,21),
  * steps (*\/15, 1-9/2), and *. No month/day names — same rule the rest of
- * Midas already enforces ("no MON/JAN names").
+ * Social Agents already enforces ("no MON/JAN names").
  *
  * All times UTC-naive against the provided Date: the worker converts the
  * user's timezone at a higher level by running the container in TZ=<zone>

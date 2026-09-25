@@ -1,4 +1,5 @@
 # User artifacts — never committed (brand pack, profile map, configs, knowledge)
+social-agents/
 midas/
 
 # Generated at onboarding for the user's agent sessions — per-workspace, not repo docs

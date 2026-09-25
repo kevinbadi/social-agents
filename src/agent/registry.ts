@@ -1,5 +1,5 @@
 /**
- * Midas's tool belt, engine-agnostic. One registry drives both brains: the
+ * Social Agents' tool belt, engine-agnostic. One registry drives both brains: the
  * Claude Agent SDK (via MCP in tools.ts) and any OpenAI-compatible API
  * (via the function-calling loop in apiLoop.ts). The allowlist, hard
  * blocks, and platform matrix are enforced inside CreatorOSClient, so a
@@ -16,14 +16,14 @@ import {
   type StarterCron,
 } from '../automations/crons.js';
 import { buildFunnelAutomation } from '../automations/funnels.js';
-import type { MidasConfig } from '../config/midasConfig.js';
+import type { SocialAgentsConfig } from '../config/socialAgentsConfig.js';
 
 export interface ToolOutcome {
   text: string;
   isError?: boolean;
 }
 
-export interface MidasTool {
+export interface AgentTool {
   name: string;
   description: string;
   shape: z.ZodRawShape;
@@ -40,7 +40,7 @@ function run(fn: () => Promise<unknown>): Promise<ToolOutcome> {
 
 const platformTarget = z.object({
   platform: z.string().describe('Platform, e.g. tiktok, instagram, youtube, twitter, threads'),
-  accountId: z.string().describe('Account ID from midas/PROFILES.md'),
+  accountId: z.string().describe('Account ID from social-agents/PROFILES.md'),
   customContent: z.string().optional(),
   scheduledFor: z.string().optional().describe('Per-platform override, absolute ISO 8601'),
   platformSpecificData: z
@@ -61,14 +61,14 @@ const mediaItem = z.object({
 export function buildToolRegistry(
   client: CreatorOSClient,
   workspaceRoot: string,
-  config: MidasConfig | null,
-): MidasTool[] {
+  config: SocialAgentsConfig | null,
+): AgentTool[] {
   const t = (
     name: string,
     description: string,
     shape: z.ZodRawShape,
     handler: (args: Record<string, unknown>) => Promise<ToolOutcome>,
-  ): MidasTool => ({ name, description, shape, handler });
+  ): AgentTool => ({ name, description, shape, handler });
 
   return [
     // ---- Accounts & profiles ----
@@ -416,7 +416,7 @@ export function buildToolRegistry(
       {
         name: z.string().describe('lowercase-with-hyphens'),
         schedule: z.string().describe('Strict 5-field cron, e.g. "0 9 * * *"'),
-        skill: z.string().describe('A skill in midas/skills/, e.g. respond-to-comments'),
+        skill: z.string().describe('A skill in social-agents/skills/, e.g. respond-to-comments'),
         model: z.string().optional().describe('Model override for this automation — use a small/cheap model for engagement runs'),
       },
       ({ name, schedule, skill, model }) =>

@@ -1,6 +1,6 @@
 # brand-interview
 
-The brand pack is the one file every caption, description, and CTA flows from. Onboarding does not collect it — you do, in chat, where you can follow up. Run this the moment `midas/BRAND.md` is missing, before anything else.
+The brand pack is the one file every caption, description, and CTA flows from. Onboarding does not collect it — you do, in chat, where you can follow up. Run this the moment `social-agents/BRAND.md` is missing, before anything else.
 
 ## How to run it
 
@@ -19,13 +19,13 @@ Agency mode: this is the CLIENT's brand, not the agency's. Ask in those terms.
 
 ## Write the file
 
-Write `midas/BRAND.md` in exactly this shape, then read it back and ask for sign-off. Edit on request; the latest file always wins.
+Write `social-agents/BRAND.md` in exactly this shape, then read it back and ask for sign-off. Edit on request; the latest file always wins.
 
 ```md
 # Brand Pack
 
-Midas reads this before writing anything. Every caption, description, and
-CTA flows from here. Edit freely — Midas always uses the latest version.
+Social Agents reads this before writing anything. Every caption, description, and
+CTA flows from here. Edit freely — Social Agents always uses the latest version.
 
 ## What this brand is about
 
@@ -51,13 +51,13 @@ CTA flows from here. Edit freely — Midas always uses the latest version.
 
 - <handle or URL>
 
-Research findings live in `knowledge/COMPETITORS.md` — ask Midas to refresh them any time.
+Research findings live in `knowledge/COMPETITORS.md` — ask Social Agents to refresh them any time.
 ```
 
 ## After sign-off
 
-- If competitors were named, research them (content mix, cadence, hooks, gaps) and write `midas/knowledge/COMPETITORS.md`.
-- Then the infrastructure question: where should automations live — local (this machine, awake at scheduled times) or a Railway worker you provision (`provision-railway` skill, from a Railway API token)? Save `automationTarget` and `timezone` to `midas/midas.json`. Local is a fine answer; never lecture on cost.
+- If competitors were named, research them (content mix, cadence, hooks, gaps) and write `social-agents/knowledge/COMPETITORS.md`.
+- Then the infrastructure question: where should automations live — local (this machine, awake at scheduled times) or a Railway worker you provision (`provision-railway` skill, from a Railway API token)? Save `automationTarget` and `timezone` to `social-agents/social-agents.json`. Local is a fine answer; never lecture on cost.
 - Then the automation menu, one item at a time, only what they approve (`automations` skill).
 
 ## Judgment rules

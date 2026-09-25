@@ -9,27 +9,27 @@
  */
 import { createSdkMcpServer, tool } from '@anthropic-ai/claude-agent-sdk';
 import type { CreatorOSClient } from '../client/client.js';
-import type { MidasConfig } from '../config/midasConfig.js';
+import type { SocialAgentsConfig } from '../config/socialAgentsConfig.js';
 import { buildToolRegistry } from './registry.js';
 import { appendActivity, describeToolCall, isLoggedAction } from '../util/activityLog.js';
 
-export function buildToolServer(client: CreatorOSClient, workspaceRoot: string, config: MidasConfig | null) {
+export function buildToolServer(client: CreatorOSClient, workspaceRoot: string, config: SocialAgentsConfig | null) {
   const registry = buildToolRegistry(client, workspaceRoot, config);
-  // Scheduled runs export MIDAS_WORKFLOW=<skill/cron name>; interactive
+  // Scheduled runs export SOCIAL_AGENTS_WORKFLOW=<skill/cron name>; interactive
   // chat and the dashboard chat default to 'chat'.
-  const workflow = process.env.MIDAS_WORKFLOW || 'chat';
+  const workflow = process.env.SOCIAL_AGENTS_WORKFLOW || 'chat';
   return createSdkMcpServer({
     name: 'creatoros',
     version: '1.0.0',
-    tools: registry.map((midasTool) =>
-      tool(midasTool.name, midasTool.description, midasTool.shape, async (args) => {
-        const result = await midasTool.handler(args as Record<string, unknown>);
-        if (isLoggedAction(midasTool.name)) {
+    tools: registry.map((agentTool) =>
+      tool(agentTool.name, agentTool.description, agentTool.shape, async (args) => {
+        const result = await agentTool.handler(args as Record<string, unknown>);
+        if (isLoggedAction(agentTool.name)) {
           const { platform, target } = describeToolCall(args as Record<string, unknown>);
           await appendActivity(workspaceRoot, {
             ts: new Date().toISOString(),
             workflow,
-            action: midasTool.name,
+            action: agentTool.name,
             platform,
             target,
             outcome: result.isError ? 'failed' : 'sent',

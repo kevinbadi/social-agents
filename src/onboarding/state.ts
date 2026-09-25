@@ -1,6 +1,6 @@
 /**
  * The interview is resumable: every answer lands on disk the moment it's
- * given. Kill the process mid-interview, re-run `npm start creatoros midas`,
+ * given. Kill the process mid-interview, re-run `npm start creatoros social-agents`,
  * and it picks up exactly where it left off.
  */
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
@@ -52,14 +52,14 @@ export interface InterviewState {
       timezone: string;
       /** Railway worker URL once deployed — optional at interview time. */
       workerUrl?: string;
-      /** Generated for the user; goes into midas.json + the deploy guide. */
+      /** Generated for the user; goes into social-agents.json + the deploy guide. */
       workerToken?: string;
       /** Railway service id for dashboard deploy-status checks. */
       railwayServiceId?: string;
-      /** A Railway API token was saved to ~/.midas — the agent can provision. */
+      /** A Railway API token was saved to ~/.social-agents — the agent can provision. */
       railwayTokenSaved?: boolean;
       /**
-       * An AI credential for the cloud worker already exists in ~/.midas
+       * An AI credential for the cloud worker already exists in ~/.social-agents
        * (from a prior run or the shell env) — never collected by the form;
        * the agent installs one in chat otherwise.
        */

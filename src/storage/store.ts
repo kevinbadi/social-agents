@@ -58,7 +58,7 @@ export interface ContentQuery {
   limit?: number;
 }
 
-export interface MidasStore {
+export interface SocialAgentsStore {
   /** Upsert by id — record 'running' at start, overwrite with the outcome at finish. */
   recordRun(run: RunRecord): Promise<void>;
   /** Newest first. */

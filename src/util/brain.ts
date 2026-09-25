@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 
 /**
- * How Midas thinks. Default: Claude — the user's plan via the logged-in
+ * How Social Agents thinks. Default: Claude — the user's plan via the logged-in
  * claude CLI (preferred, zero API keys) or ANTHROPIC_API_KEY. Fallback: any
  * model behind an Anthropic-compatible API (base URL + key + model id),
  * driven through the same Agent SDK by pointing ANTHROPIC_BASE_URL at it.

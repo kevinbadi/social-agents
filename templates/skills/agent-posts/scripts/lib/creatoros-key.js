@@ -1,6 +1,6 @@
 // Resolve the CreatorOS API key for the Agent Posts scripts.
 //
-// Midas already holds this key: onboarding saves it to ~/.midas/credentials.json
+// Social Agents already holds this key: onboarding saves it to ~/.social-agents/credentials.json
 // (or the CREATOROS_API_KEY env var wins). The Agent Posts pipeline reads it as
 // CREATOR_OS_API_KEY, so this module fills that variable in from whatever the
 // harness has, without ever writing the key to a file. Import it first.
@@ -19,7 +19,7 @@ function fromEnvFile() {
 }
 
 function fromCredentials() {
-  for (const dir of [".midas", ".kairos"]) {
+  for (const dir of [".social-agents", ".midas", ".kairos"]) {
     const file = path.join(os.homedir(), dir, "credentials.json");
     if (!fs.existsSync(file)) continue;
     try {

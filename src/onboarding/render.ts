@@ -1,6 +1,6 @@
 /**
- * Pure renderers for the files Midas reads forever after. Everything
- * Midas writes later — captions, descriptions, CTAs — flows from BRAND.md.
+ * Pure renderers for the files Social Agents reads forever after. Everything
+ * Social Agents writes later — captions, descriptions, CTAs — flows from BRAND.md.
  */
 import type { BrandAnswers, InterviewState, ProductOffer } from './state.js';
 import type { SocialAccount } from '../client/types.js';
@@ -32,7 +32,7 @@ export function renderBrandMd(brand: BrandAnswers): string {
   const competitors =
     brand.competitors.length > 0
       ? brand.competitors.map((c) => `- ${c}`).join('\n')
-      : '_None given yet — add handles here and ask Midas to research them._';
+      : '_None given yet — add handles here and ask Social Agents to research them._';
   const links =
     brand.products.length > 0
       ? brand.products
@@ -42,8 +42,8 @@ export function renderBrandMd(brand: BrandAnswers): string {
 
   return `# Brand Pack
 
-Midas reads this before writing anything. Every caption, description, and
-CTA flows from here. Edit freely — Midas always uses the latest version.
+Social Agents reads this before writing anything. Every caption, description, and
+CTA flows from here. Edit freely — Social Agents always uses the latest version.
 
 ## What this brand is about
 
@@ -68,7 +68,7 @@ ${brand.audience}
 
 ${competitors}
 
-Research findings live in \`knowledge/COMPETITORS.md\` — ask Midas to refresh them any time.
+Research findings live in \`knowledge/COMPETITORS.md\` — ask Social Agents to refresh them any time.
 `;
 }
 
@@ -92,7 +92,7 @@ ${rows}
 export function renderTutorialsMd(): string {
   return `# Tutorials Index — KevBuildsApps
 
-Before building an automation pattern it hasn't built before, Midas checks
+Before building an automation pattern it hasn't built before, Social Agents checks
 this index, fetches the tutorial transcript, and follows the taught pattern.
 
 Adding a tutorial is a one-line edit: \`- [Title](URL) — what it teaches\`.
@@ -127,13 +127,13 @@ export function describeWorkerHealth(health: {
  * timezone from their answer), so the deploy is copy-paste.
  */
 export function renderRailwayGuide(opts: { timezone: string; workerToken: string }): string {
-  return `# Deploy the Midas worker on Railway
+  return `# Deploy the Social Agents worker on Railway
 
 One always-on service runs ALL your automations — your machine can be off.
 Ten minutes, one time. Every value below is already filled in for you.
 
 Deploy with the Railway CLI from THIS folder — a GitHub deploy can't work
-here, because your workspace (midas/) is gitignored and never reaches
+here, because your workspace (social-agents/) is gitignored and never reaches
 GitHub. The CLI uploads the folder itself.
 
 ## 1. Create the project and set the variables
@@ -142,11 +142,11 @@ From this folder:
 
 \`\`\`
 npx -y @railway/cli login
-npx -y @railway/cli init --name midas-worker
+npx -y @railway/cli init --name social-agents-worker
 npx -y @railway/cli variables \\
   --set "CREATOROS_API_KEY=<your CreatorOS API key — https://www.creatoros.ca/ → Settings → API key>" \\
   --set "ANTHROPIC_API_KEY=<your Anthropic key — or set CLAUDE_CODE_OAUTH_TOKEN from claude setup-token instead>" \\
-  --set "MIDAS_WORKER_TOKEN=${opts.workerToken}" \\
+  --set "SOCIAL_AGENTS_WORKER_TOKEN=${opts.workerToken}" \\
   --set "TZ=${opts.timezone}" \\
   --set "RAILWAY_DOCKERFILE_PATH=Dockerfile.worker" \\
   --skip-deploys
@@ -161,81 +161,81 @@ npx -y @railway/cli up --detach --no-gitignore
 \`\`\`
 
 \`--no-gitignore\` is REQUIRED — without it Railway drops gitignored files,
-and midas/ (your config, skills, automations) is gitignored. The
+and social-agents/ (your config, skills, automations) is gitignored. The
 .railwayignore file keeps node_modules, .env, and logs out either way.
 
 ## 3. Expose and connect it
 
 1. \`npx -y @railway/cli domain\` — generates the public URL.
-2. Tell Midas in chat: "my worker is live at https://<that-domain>" — or paste it
-   into \`midas/midas.json\` under \`worker.url\` yourself.
+2. Tell Social Agents in chat: "my worker is live at https://<that-domain>" — or paste it
+   into \`social-agents/social-agents.json\` under \`worker.url\` yourself.
 3. Optional, for deploy status on the dashboard: set \`RAILWAY_API_TOKEN\` in the
-   dashboard's environment and put the service id in \`midas.json\` → \`railway.serviceId\`.
+   dashboard's environment and put the service id in \`social-agents.json\` → \`railway.serviceId\`.
 
 ## 4. Verify
 
 Open the dashboard's Automations page — the "▲ Railway worker" strip should read
 **up · on schedule** (its /health should list your automations, not 0).
-Automations you create in chat land in \`midas/automations.json\`; after changing
+Automations you create in chat land in \`social-agents/automations.json\`; after changing
 them, sync the deployed worker with \`npx -y @railway/cli up --detach --no-gitignore\`
-— or just ask Midas to redeploy.
+— or just ask Social Agents to redeploy.
 `;
 }
 
 /**
  * The repo-root CLAUDE.md, written when the form finishes. Any agent chat
- * opened in this folder — Claude Code, `midas`, several in parallel — reads
+ * opened in this folder — Claude Code, `social-agents`, several in parallel — reads
  * it automatically, so the handoff needs no AI wired into the form itself.
  */
 export function renderClaudeMd(state: InterviewState): string {
   const pathway = state.answers.pathway;
   const mode = state.answers.mode ?? 'creator';
-  return `# Midas — CreatorOS agent workspace
+  return `# Social Agents — CreatorOS agent workspace
 
 Generated at onboarding — the form's answers live in the files below, never in
 any one chat. Sessions are parallel-safe: open as many agent chats here as you
 like; files are the source of truth, so re-read before you write.
 
-You are Midas. You run this ${mode === 'agency' ? "agency's client brands" : "creator's brand"} on CreatorOS: posting at
+You are Social Agents, the CreatorOS agent. You run this ${mode === 'agency' ? "agency's client brands" : "creator's brand"} on CreatorOS: posting at
 scale, automations, comment & DM replies, analytics.
 
 ## Read these first, every session
 
-1. \`midas/midas.json\` — config: mode, timezone, automation pathway, worker.
-2. \`midas/BRAND.md\` — the brand pack. Every caption, description, and CTA flows from it.
-3. \`midas/PROFILES.md\` — the profile map. Posts target account IDs, never bare handles.
+1. \`social-agents/social-agents.json\` — config: mode, timezone, automation pathway, worker.
+2. \`social-agents/BRAND.md\` — the brand pack. Every caption, description, and CTA flows from it.
+3. \`social-agents/PROFILES.md\` — the profile map. Posts target account IDs, never bare handles.
 
 ## Not initialized yet?
 
 Onboarding is a two-question form (creator/agency + API key); the real
-briefing happens in chat. If \`midas/BRAND.md\` does not exist, your FIRST job is
-the brand interview — follow \`midas/skills/brand-interview/SKILL.md\`, write the
+briefing happens in chat. If \`social-agents/BRAND.md\` does not exist, your FIRST job is
+the brand interview — follow \`social-agents/skills/brand-interview/SKILL.md\`, write the
 file, and get sign-off before writing a single caption.
-\`midas/SETUP_PROMPT.md\` is the full initialization brief (brand, pathway,
+\`social-agents/SETUP_PROMPT.md\` is the full initialization brief (brand, pathway,
 automation menu, analytics read). If its tasks haven't run yet, execute it.
 
 ## The workspace
 
-- \`midas/skills/\` — playbooks, one \`SKILL.md\` each. Before building an automation or workflow, check for a matching skill and follow it. A finished vertical video to post is the \`agent-posts\` skill: run its \`scripts/check-setup.mjs\` first.
-- \`midas/knowledge/\` — research base: \`COMPETITORS.md\`, \`TUTORIALS.md\`.
-- \`midas/automations.json\` — the schedule. A deployed worker re-reads it every 30 seconds; no restarts needed.
-- \`midas/RAILWAY.md\` — pre-filled cloud-worker deploy guide (railway pathway only).
+- \`social-agents/skills/\` — playbooks, one \`SKILL.md\` each. Before building an automation or workflow, check for a matching skill and follow it. A finished vertical video to post is the \`agent-posts\` skill: run its \`scripts/check-setup.mjs\` first.
+- \`social-agents/knowledge/\` — research base: \`COMPETITORS.md\`, \`TUTORIALS.md\`.
+- \`social-agents/automations.json\` — the schedule. A deployed worker re-reads it every 30 seconds; no restarts needed.
+- \`social-agents/RAILWAY.md\` — pre-filled cloud-worker deploy guide (railway pathway only).
 - \`content-library/\` — media staged for posting.
 
 ## Ground rules
 
 - Automation pathway: ${pathway?.automationTarget ?? 'local'} · timezone ${pathway?.timezone ?? 'UTC'}.
 - Confirm anything that publishes, DMs strangers, or spends money BEFORE it goes live.
-- Credentials live in \`~/.midas/credentials.json\` — never print them and never copy them into this repo.
-- \`midas/\` is gitignored on purpose: it is the user's private workspace. So is this file.
+- Credentials live in \`~/.social-agents/credentials.json\` — never print them and never copy them into this repo.
+- \`social-agents/\` is gitignored on purpose: it is the user's private workspace. So is this file.
 `;
 }
 
 /**
  * The prompt the user hands their AI agent to actually get everything set
  * up — every task traces back to a questionnaire answer already
- * materialized in midas/. Printed at the finish and saved to
- * midas/SETUP_PROMPT.md.
+ * materialized in social-agents/. Printed at the finish and saved to
+ * social-agents/SETUP_PROMPT.md.
  */
 export function renderSetupPrompt(state: InterviewState): string {
   const pathway = state.answers.pathway;
@@ -244,7 +244,7 @@ export function renderSetupPrompt(state: InterviewState): string {
   const tasks: string[] = [];
   if (!brandDone) {
     tasks.push(
-      'Interview me about my brand, one question at a time, following the brand-interview skill: what the brand is about, what I sell and where each offer lives, my voice (three adjectives and one "never"), emoji and hashtag policy, target audience, competitors to watch. Write the result to midas/BRAND.md in that skill\'s format and read it back to me for sign-off. Research any competitors I name and write midas/knowledge/COMPETITORS.md.',
+      'Interview me about my brand, one question at a time, following the brand-interview skill: what the brand is about, what I sell and where each offer lives, my voice (three adjectives and one "never"), emoji and hashtag policy, target audience, competitors to watch. Write the result to social-agents/BRAND.md in that skill\'s format and read it back to me for sign-off. Research any competitors I name and write social-agents/knowledge/COMPETITORS.md.',
     );
   }
   tasks.push(
@@ -253,29 +253,29 @@ export function renderSetupPrompt(state: InterviewState): string {
   if (pathway?.automationTarget === 'railway' && !pathway.workerUrl) {
     if (pathway.railwayTokenSaved) {
       const aiNote = pathway.aiCredentialSaved
-        ? 'My cloud AI credential is ALREADY SAVED in ~/.midas/credentials.json (workerAiKey; workerAiKind names its env var) — use it, do NOT ask me for it again.'
+        ? 'My cloud AI credential is ALREADY SAVED in ~/.social-agents/credentials.json (workerAiKey; workerAiKind names its env var) — use it, do NOT ask me for it again.'
         : 'You will need to ask me for an AI credential for the cloud worker.';
       tasks.push(
-        `Provision my Railway worker for me — my Railway API token is saved in ~/.midas. ${aiNote} Follow the provision-railway skill: railway init, upload this workspace with railway up, set every variable, generate the domain, save worker.url + railway.serviceId to midas/midas.json, and verify /health. Never print any secret.`,
+        `Provision my Railway worker for me — my Railway API token is saved in ~/.social-agents. ${aiNote} Follow the provision-railway skill: railway init, upload this workspace with railway up, set every variable, generate the domain, save worker.url + railway.serviceId to social-agents/social-agents.json, and verify /health. Never print any secret.`,
       );
     } else {
       tasks.push(
-        'My Railway worker is not deployed yet. Walk me through midas/RAILWAY.md step by step when I am ready — or if I give you a Railway API token, provision it yourself via the provision-railway skill. Once live, save the URL to midas/midas.json under worker.url.',
+        'My Railway worker is not deployed yet. Walk me through social-agents/RAILWAY.md step by step when I am ready — or if I give you a Railway API token, provision it yourself via the provision-railway skill. Once live, save the URL to social-agents/social-agents.json under worker.url.',
       );
     }
   } else if (pathway?.automationTarget !== 'railway') {
     tasks.push(
-      'Ask me where my automations should live: local (this machine, must be awake at scheduled times) or Railway (an always-on cloud worker you build for me from a Railway API token, via the provision-railway skill — recommended for anyone who wants replies answered the moment they land). Save automationTarget and timezone to midas/midas.json. Local is a fine answer.',
+      'Ask me where my automations should live: local (this machine, must be awake at scheduled times) or Railway (an always-on cloud worker you build for me from a Railway API token, via the provision-railway skill — recommended for anyone who wants replies answered the moment they land). Save automationTarget and timezone to social-agents/social-agents.json. Local is a fine answer.',
     );
   }
   tasks.push(
-    `Onboarding set up ZERO automations on purpose — I pick my own set. Walk me through the menu one item at a time and ask what I want: auto-replies to comments and DMs (with a persona I define), comments-to-DM funnels, scheduled content posting, recurring analytics reports. Set up ONLY what I approve on the ${pathway?.automationTarget ?? 'local'} pathway, confirm exact copy with me before anything goes live, save the choices to midas/midas.json, and verify with list_funnels / list_cron_automations. "None for now" is a valid answer — don't push.`,
+    `Onboarding set up ZERO automations on purpose — I pick my own set. Walk me through the menu one item at a time and ask what I want: auto-replies to comments and DMs (with a persona I define), comments-to-DM funnels, scheduled content posting, recurring analytics reports. Set up ONLY what I approve on the ${pathway?.automationTarget ?? 'local'} pathway, confirm exact copy with me before anything goes live, save the choices to social-agents/social-agents.json, and verify with list_funnels / list_cron_automations. "None for now" is a valid answer — don't push.`,
   );
   tasks.push(
     'Pull follower stats and recent post analytics, then give me an honest state-of-the-socials read with ONE recommended first move.',
   );
 
-  return `Read midas/midas.json and midas/PROFILES.md first${brandDone ? ', and midas/BRAND.md' : ''} — they hold what setup collected. Then, in order:
+  return `Read social-agents/social-agents.json and social-agents/PROFILES.md first${brandDone ? ', and social-agents/BRAND.md' : ''} — they hold what setup collected. Then, in order:
 
 ${tasks.map((task, index) => `${index + 1}. ${task}`).join('\n')}
 

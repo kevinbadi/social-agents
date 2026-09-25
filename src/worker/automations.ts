@@ -1,5 +1,5 @@
 /**
- * The worker's automation list — midas/automations.json. On the Railway
+ * The worker's automation list — social-agents/automations.json. On the Railway
  * pathway this file IS the schedule: one always-on worker reads it and
  * runs every entry in-process (one container for any number of
  * automations, vs the old one-service-per-cron scaffold). The agent's
@@ -15,7 +15,7 @@ export interface WorkerAutomation {
   name: string;
   /** Strict 5-field cron. */
   schedule: string;
-  /** A skill in midas/skills/. */
+  /** A skill in social-agents/skills/. */
   skill: string;
   enabled: boolean;
   /** Optional model override for this automation's runs (cheap models for engagement). */
@@ -24,7 +24,7 @@ export interface WorkerAutomation {
 }
 
 export function automationsPath(workspaceRoot: string): string {
-  return join(workspaceRoot, 'midas', 'automations.json');
+  return join(workspaceRoot, 'social-agents', 'automations.json');
 }
 
 export async function loadWorkerAutomations(workspaceRoot: string): Promise<WorkerAutomation[]> {

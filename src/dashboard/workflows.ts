@@ -1,5 +1,5 @@
 /**
- * The workflow catalog the dashboard renders: every automation Midas can
+ * The workflow catalog the dashboard renders: every automation Social Agents can
  * run today (the four starter pillars), plus the content-marketing
  * workflows on the roadmap for this repo. "Live" is decided against the
  * actual automations list, never assumed.
@@ -32,7 +32,7 @@ export function describeSchedule(schedule: string): string {
 
 /**
  * Future content-marketing workflows — the roadmap this repo grows into.
- * Shown on the dashboard as coming-soon so users see where Midas is headed.
+ * Shown on the dashboard as coming-soon so users see where Social Agents is headed.
  */
 export const FUTURE_WORKFLOWS: WorkflowEntry[] = [
   {

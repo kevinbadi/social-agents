@@ -4,7 +4,7 @@ Publish a longform video to YouTube with title, description, and tags; also upda
 
 ## Before anything
 
-Read `midas/BRAND.md` — the description's pitch, links, and CTA come from it. `midas/PROFILES.md` has the YouTube account ID.
+Read `social-agents/BRAND.md` — the description's pitch, links, and CTA come from it. `social-agents/PROFILES.md` has the YouTube account ID.
 
 ## Procedure
 

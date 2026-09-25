@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Vertical 9:16 Reel/Shorts cover: fal scene (identity + style refs) then
- * ffmpeg burns the two-line hook. Run from the Midas workspace root.
+ * ffmpeg burns the two-line hook. Run from the Social Agents workspace root.
  */
 import fs from "node:fs";
 import { createRequire as __cr } from "node:module";
@@ -16,11 +16,11 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SKILL = path.resolve(HERE, "..");
 const CLAUDE = path.resolve(SKILL, "../..");
 // Identity references belong to the user, not the skill: two or more clean
-// photos of the creator in midas/assets/identity/*.png (override the folder
+// photos of the creator in social-agents/assets/identity/*.png (override the folder
 // with AGENT_POSTS_IDENTITY_DIR). An optional identity.txt beside them
 // describes the person in one or two sentences for the scene prompt. With no
 // references the cover is built from a real video frame instead of a fal scene.
-const IDENTITY_DIR = path.resolve(process.env.AGENT_POSTS_IDENTITY_DIR || "midas/assets/identity");
+const IDENTITY_DIR = path.resolve(process.env.AGENT_POSTS_IDENTITY_DIR || "social-agents/assets/identity");
 const IDENTITY = fs.existsSync(IDENTITY_DIR)
   ? fs.readdirSync(IDENTITY_DIR).filter((f) => /\.(png|jpe?g)$/i.test(f)).sort().map((f) => path.join(IDENTITY_DIR, f))
   : [];

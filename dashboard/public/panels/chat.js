@@ -5,7 +5,7 @@
  */
 export default {
   id: 'chat',
-  title: 'Chat with Midas',
+  title: 'Chat with Social Agents',
   subtitle: 'Same agent as the terminal — ask it to check, fix, or change anything above',
   icon: '❯',
   route: '/chat',
@@ -18,7 +18,7 @@ export default {
 
     const scroll = h('div', { class: 'chat-scroll' },
       h('div', { class: 'chat-msg agent' },
-        'Midas here. I can read everything this dashboard shows — try "why did my last reply fail?" or "turn on the engagement sweep".'));
+        'Social Agents here. I can read everything this dashboard shows — try "why did my last reply fail?" or "turn on the engagement sweep".'));
     const push = (cls, text) => {
       const el = h('div', { class: cls }, text);
       scroll.append(el);
@@ -26,7 +26,7 @@ export default {
       return el;
     };
 
-    const input = h('input', { class: 'input', placeholder: 'talk to midas…', autocomplete: 'off' });
+    const input = h('input', { class: 'input', placeholder: 'talk to your social agents…', autocomplete: 'off' });
     const sendBtn = h('button', { class: 'btn btn-primary', onclick: () => send() }, 'Send');
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
 
@@ -37,7 +37,7 @@ export default {
     let thinkTimer = null;
     const startThinking = () => {
       const secs = h('span', {}, '0s');
-      think = h('div', { class: 'chat-thinking' }, logo(20), h('span', {}, 'midas is thinking…'), secs);
+      think = h('div', { class: 'chat-thinking' }, logo(20), h('span', {}, 'social agents are thinking…'), secs);
       scroll.append(think);
       scroll.scrollTop = scroll.scrollHeight;
       const startedAt = Date.now();

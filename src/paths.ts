@@ -1,15 +1,16 @@
+import { existsSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
- * Everything Midas writes for the user lives under `midas/` in the
+ * Everything Social Agents writes for the user lives under `social-agents/` in the
  * workspace root. The whole directory is gitignored — it holds the brand
  * pack, profile map, config, skills, and knowledge base for one client.
  */
-export interface MidasPaths {
+export interface SocialAgentsPaths {
   root: string;
   /** Repo-root CLAUDE.md — the generated briefing any agent chat reads. */
   claudeMd: string;
-  midasDir: string;
+  socialAgentsDir: string;
   brandMd: string;
   profilesMd: string;
   configJson: string;
@@ -21,21 +22,34 @@ export interface MidasPaths {
   contentLibraryDir: string;
 }
 
-export function midasPaths(root: string = process.cwd()): MidasPaths {
-  const midasDir = join(root, 'midas');
-  const knowledgeDir = join(midasDir, 'knowledge');
+export function socialAgentsPaths(root: string = process.cwd()): SocialAgentsPaths {
+  const socialAgentsDir = join(root, 'social-agents');
+  const knowledgeDir = join(socialAgentsDir, 'knowledge');
   return {
     root,
     claudeMd: join(root, 'CLAUDE.md'),
-    midasDir,
-    brandMd: join(midasDir, 'BRAND.md'),
-    profilesMd: join(midasDir, 'PROFILES.md'),
-    configJson: join(midasDir, 'midas.json'),
-    setupStateJson: join(midasDir, '.setup-state.json'),
-    skillsDir: join(midasDir, 'skills'),
+    socialAgentsDir,
+    brandMd: join(socialAgentsDir, 'BRAND.md'),
+    profilesMd: join(socialAgentsDir, 'PROFILES.md'),
+    configJson: join(socialAgentsDir, 'social-agents.json'),
+    setupStateJson: join(socialAgentsDir, '.setup-state.json'),
+    skillsDir: join(socialAgentsDir, 'skills'),
     knowledgeDir,
     competitorsMd: join(knowledgeDir, 'COMPETITORS.md'),
     tutorialsMd: join(knowledgeDir, 'TUTORIALS.md'),
     contentLibraryDir: join(root, 'content-library'),
   };
+}
+
+/**
+ * Pre-rename workspaces live in `midas/` with `midas.json`. Move them to
+ * `social-agents/` once, so every path above resolves. No-op otherwise.
+ */
+export function migrateLegacyWorkspace(root: string = process.cwd()): void {
+  const legacyDir = join(root, 'midas');
+  const paths = socialAgentsPaths(root);
+  if (!existsSync(legacyDir) || existsSync(paths.socialAgentsDir)) return;
+  renameSync(legacyDir, paths.socialAgentsDir);
+  const legacyConfig = join(paths.socialAgentsDir, 'midas.json');
+  if (existsSync(legacyConfig) && !existsSync(paths.configJson)) renameSync(legacyConfig, paths.configJson);
 }

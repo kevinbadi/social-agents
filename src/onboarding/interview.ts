@@ -16,9 +16,9 @@ import { CreatorOSClient, isValidKeyShape } from '../client/client.js';
 import { platformLabel } from '../client/platformMatrix.js';
 import type { SocialAccount } from '../client/types.js';
 import { maskKey } from '../util/mask.js';
-import { midasPaths, type MidasPaths } from '../paths.js';
+import { socialAgentsPaths, type SocialAgentsPaths } from '../paths.js';
 import { resolveApiKey, saveApiKey, saveCredentials } from '../config/credentials.js';
-import { saveConfig, type MidasConfig } from '../config/midasConfig.js';
+import { saveConfig, type SocialAgentsConfig } from '../config/socialAgentsConfig.js';
 import { isStepDone, loadState, markStepDone, saveState, type InterviewState } from './state.js';
 import {
   renderClaudeMd,
@@ -36,19 +36,19 @@ function say(text: string): void {
 
 export interface InterviewResult {
   client: CreatorOSClient;
-  config: MidasConfig;
+  config: SocialAgentsConfig;
 }
 
 export async function runInterview(root: string = process.cwd()): Promise<InterviewResult> {
-  const paths = midasPaths(root);
-  await mkdir(paths.midasDir, { recursive: true });
+  const paths = socialAgentsPaths(root);
+  await mkdir(paths.socialAgentsDir, { recursive: true });
   const state = await loadState(paths.setupStateJson);
   const resuming = state.completed.length > 0;
 
   say(
     resuming
-      ? `Midas here — picking up where we left off. ${state.completed.length} step(s) already done.`
-      : `Hey — I'm Midas, your marketing agent. Two quick things and you're in: creator or agency, and your CreatorOS API key. Everything else we figure out together in chat.
+      ? `Social Agents here — picking up where we left off. ${state.completed.length} step(s) already done.`
+      : `Hey — I'm Social Agents, your marketing agent. Two quick things and you're in: creator or agency, and your CreatorOS API key. Everything else we figure out together in chat.
 
 What CreatorOS is: the service I run on. It holds your connected socials and does the actual posting, replying, and analytics — I'm the agent that drives it. You need one thing from it, an API key:
   1. Sign up at ${GET_KEY_URL}
@@ -164,7 +164,7 @@ async function collectKeysInteractively(state: InterviewState): Promise<CreatorO
   return active.client;
 }
 
-async function stepKey(paths: MidasPaths, state: InterviewState): Promise<CreatorOSClient> {
+async function stepKey(paths: SocialAgentsPaths, state: InterviewState): Promise<CreatorOSClient> {
   let client: CreatorOSClient;
 
   const envKey = await resolveApiKey();
@@ -217,7 +217,7 @@ async function stepKey(paths: MidasPaths, state: InterviewState): Promise<Creato
  * from the machine, and the pathway defaults to local until the agent and
  * the user decide otherwise in chat.
  */
-async function stepFinish(client: CreatorOSClient, paths: MidasPaths, state: InterviewState): Promise<MidasConfig> {
+async function stepFinish(client: CreatorOSClient, paths: SocialAgentsPaths, state: InterviewState): Promise<SocialAgentsConfig> {
   const { accounts } = await client.listAccounts();
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   // A worker auth token exists from day one, so a later switch to Railway
@@ -234,10 +234,10 @@ async function stepFinish(client: CreatorOSClient, paths: MidasPaths, state: Int
   await writeFile(paths.profilesMd, renderProfilesMd(accounts), 'utf8');
 
   const profileId = typeof accounts[0]?.profileId === 'string' ? accounts[0]?.profileId : accounts[0]?.profileId?._id;
-  const config: MidasConfig = {
+  const config: SocialAgentsConfig = {
     version: 1,
     mode: state.answers.mode ?? 'creator',
-    // The form never asks about AI — the built-in `midas` chat defaults to
+    // The form never asks about AI — the built-in `social-agents` chat defaults to
     // Claude and reconfigures itself lazily on first launch if needed.
     brain: { provider: 'claude' },
     automationTarget: 'local',
@@ -262,7 +262,7 @@ async function stepFinish(client: CreatorOSClient, paths: MidasPaths, state: Int
     await writeFile(paths.tutorialsMd, renderTutorialsMd(), 'utf8');
   }
   await mkdir(paths.contentLibraryDir, { recursive: true });
-  await writeFile(join(paths.midasDir, 'RAILWAY.md'), renderRailwayGuide({ timezone, workerToken }), 'utf8');
+  await writeFile(join(paths.socialAgentsDir, 'RAILWAY.md'), renderRailwayGuide({ timezone, workerToken }), 'utf8');
 
   // CLAUDE.md at the repo root — the briefing ANY agent opened in this
   // folder reads automatically — plus the initialization prompt for agents
@@ -270,8 +270,8 @@ async function stepFinish(client: CreatorOSClient, paths: MidasPaths, state: Int
   await writeFile(paths.claudeMd, renderClaudeMd(state), 'utf8');
   const setupPrompt = renderSetupPrompt(state);
   await writeFile(
-    join(paths.midasDir, 'SETUP_PROMPT.md'),
-    `# Initialization Prompt\n\nOnboarding is done and the workspace is written. The built-in \`midas\` chat\nstarts from this on its own. For any other agent opened in this folder, send\nthis as the first message:\n\n\`\`\`\n${setupPrompt}\n\`\`\`\n`,
+    join(paths.socialAgentsDir, 'SETUP_PROMPT.md'),
+    `# Initialization Prompt\n\nOnboarding is done and the workspace is written. The built-in \`social-agents\` chat\nstarts from this on its own. For any other agent opened in this folder, send\nthis as the first message:\n\n\`\`\`\n${setupPrompt}\n\`\`\`\n`,
     'utf8',
   );
 
@@ -279,14 +279,14 @@ async function stepFinish(client: CreatorOSClient, paths: MidasPaths, state: Int
   await saveState(paths.setupStateJson, state);
 
   say(
-    `That's the whole form. Your workspace is on disk (CLAUDE.md + midas/) with ${accounts.length} connected account(s) mapped, and your marketing agent is ready.
+    `That's the whole form. Your workspace is on disk (CLAUDE.md + social-agents/) with ${accounts.length} connected account(s) mapped, and your marketing agent is ready.
 
 Go talk to it — it takes over from here:
   • it interviews you about your brand (what you sell, voice, audience, competitors)
   • it asks where automations should live (this Mac, or an always-on cloud worker it builds for you)
   • it offers the automation menu and sets up only what you approve
 
-Start the chat with:   midas        (or: npm start creatoros midas)
+Start the chat with:   social-agents        (or: npm start creatoros social-agents)
 Or open \`claude\` in this folder — it reads CLAUDE.md and picks up the same brief.`,
   );
   return config;

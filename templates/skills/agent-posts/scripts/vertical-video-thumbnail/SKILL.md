@@ -8,7 +8,7 @@ description: Build a 9:16 Reel/Shorts cover from an edited talking-head video, a
 9:16 (1080x1920) cover from **the edited video**. Run from the workspace root.
 
 ```bash
-S=midas/skills/agent-posts/scripts/vertical-video-thumbnail/scripts
+S=social-agents/skills/agent-posts/scripts/vertical-video-thumbnail/scripts
 node $S/generate.mjs --video in.mp4 --out out/cover.png --caption-only          # transcript + draft only
 node $S/generate.mjs --video in.mp4 --out out/cover.png \
   --transcript out/narration.json --keyword X --line1 "KICKER" --line2 "PAYOFF"  # the cover
@@ -23,7 +23,7 @@ Writes beside `--out`: `cover.png`, `narration.json` (transcript), `caption.txt`
 Two modes, chosen automatically:
 
 - **Real frame (default).** A frame from the video, fitted, with the two hook lines burned onto the bottom plate. Needs only ffmpeg and a bold font.
-- **Generated scene.** Needs `FAL_KEY`, `FAL_ALLOW=video-thumbnail`, and two or more photos of the creator in `midas/assets/identity/` (`AGENT_POSTS_IDENTITY_DIR` overrides). An optional `identity.txt` there describes the person for the prompt. `assets/style-ref.png` drives layout only. A locked or failing fal account falls back to the real frame; the cover step never fails the post.
+- **Generated scene.** Needs `FAL_KEY`, `FAL_ALLOW=video-thumbnail`, and two or more photos of the creator in `social-agents/assets/identity/` (`AGENT_POSTS_IDENTITY_DIR` overrides). An optional `identity.txt` there describes the person for the prompt. `assets/style-ref.png` drives layout only. A locked or failing fal account falls back to the real frame; the cover step never fails the post.
 
 ### Grid crop
 

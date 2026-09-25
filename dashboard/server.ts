@@ -1,10 +1,10 @@
 /**
- * The Midas Dashboard server — `npm run dashboard`.
+ * The Social Agents Dashboard server — `npm run dashboard`.
  *
  * A small zero-config local server: static UI from dashboard/public/ plus
  * JSON endpoints under /api/*. No database, no auth, no build step — it
- * reads the same workspace files the agent reads (midas/BRAND.md,
- * midas/midas.json, midas/skills/) and the structured activity log the
+ * reads the same workspace files the agent reads (social-agents/BRAND.md,
+ * social-agents/social-agents.json, social-agents/skills/) and the structured activity log the
  * tool layer writes (logs/activity.jsonl).
  *
  * Endpoints (all local, all JSON — build your own UI against them):
@@ -29,7 +29,7 @@ import { join, dirname, resolve, extname, relative, isAbsolute } from 'node:path
 import { fileURLToPath } from 'node:url';
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import { CreatorOSClient } from '../src/client/client.js';
-import { loadConfig, type MidasConfig } from '../src/config/midasConfig.js';
+import { loadConfig, type SocialAgentsConfig } from '../src/config/socialAgentsConfig.js';
 import { resolveApiKey } from '../src/config/credentials.js';
 import { hydrateBrain, describeBrain } from '../src/config/brainSetup.js';
 import type { BrainConfig } from '../src/util/brain.js';
@@ -64,7 +64,7 @@ import {
   summarizeActivity,
   type ActivityEntry,
 } from '../src/util/activityLog.js';
-import { midasPaths } from '../src/paths.js';
+import { migrateLegacyWorkspace, socialAgentsPaths } from '../src/paths.js';
 import { sanitize } from '../src/util/sanitize.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -113,12 +113,12 @@ export function openBrowser(url: string): void {
 interface Session {
   workspaceRoot: string;
   client: CreatorOSClient | null;
-  config: MidasConfig | null;
+  config: SocialAgentsConfig | null;
   brain: BrainConfig | null;
 }
 
 async function loadSession(workspaceRoot: string): Promise<Session> {
-  const paths = midasPaths(workspaceRoot);
+  const paths = socialAgentsPaths(workspaceRoot);
   const apiKey = await resolveApiKey();
   const client = apiKey ? new CreatorOSClient({ apiKey }) : null;
   const config = existsSync(paths.configJson) ? await loadConfig(paths.configJson) : null;
@@ -128,7 +128,7 @@ async function loadSession(workspaceRoot: string): Promise<Session> {
 
 /**
  * Config read once at boot goes stale the moment onboarding or the agent
- * writes midas.json (worker.url added after boot → "unreachable forever"
+ * writes social-agents.json (worker.url added after boot → "unreachable forever"
  * until restart). It's a tiny local file — re-read it per request, 3s TTL.
  */
 let sessionRefreshedAt = 0;
@@ -136,7 +136,7 @@ async function refreshSession(session: Session): Promise<void> {
   if (Date.now() - sessionRefreshedAt < 3_000) return;
   sessionRefreshedAt = Date.now();
   try {
-    const paths = midasPaths(session.workspaceRoot);
+    const paths = socialAgentsPaths(session.workspaceRoot);
     const config = existsSync(paths.configJson) ? await loadConfig(paths.configJson) : null;
     const brainChanged = JSON.stringify(config?.brain) !== JSON.stringify(session.config?.brain);
     session.config = config;
@@ -158,7 +158,7 @@ async function refreshSession(session: Session): Promise<void> {
 let credCache: { at: number; result: { present: boolean; valid: boolean; maskedKey?: string; error?: string } } | null = null;
 
 async function healthPayload(session: Session): Promise<unknown> {
-  const paths = midasPaths(session.workspaceRoot);
+  const paths = socialAgentsPaths(session.workspaceRoot);
 
   if (!credCache || Date.now() - credCache.at > 60_000) {
     if (!session.client) {
@@ -251,16 +251,16 @@ async function allActivity(session: Session): Promise<{ entries: ActivityEntry[]
 }
 
 /** Worker status — env overrides config so secrets can stay out of files. */
-async function fetchWorkerCached(config: MidasConfig | null): Promise<WorkerState> {
+async function fetchWorkerCached(config: SocialAgentsConfig | null): Promise<WorkerState> {
   if (workerCache && Date.now() - workerCache.at < 15_000) return workerCache.state;
-  const url = process.env.MIDAS_WORKER_URL ?? config?.worker?.url;
-  const token = process.env.MIDAS_WORKER_TOKEN ?? config?.worker?.token;
+  const url = process.env.SOCIAL_AGENTS_WORKER_URL ?? process.env.MIDAS_WORKER_URL ?? config?.worker?.url;
+  const token = process.env.SOCIAL_AGENTS_WORKER_TOKEN ?? process.env.MIDAS_WORKER_TOKEN ?? config?.worker?.token;
   const state = await fetchWorkerState(url, token);
   workerCache = { at: Date.now(), state };
   return state;
 }
 
-async function fetchRailwayCached(config: MidasConfig | null): Promise<RailwayDeployStatus | null> {
+async function fetchRailwayCached(config: SocialAgentsConfig | null): Promise<RailwayDeployStatus | null> {
   if (railwayCache && Date.now() - railwayCache.at < 60_000) return railwayCache.deploy;
   const deploy = await fetchRailwayDeploy(process.env.RAILWAY_API_TOKEN, config?.railway?.serviceId);
   railwayCache = { at: Date.now(), deploy };
@@ -409,7 +409,7 @@ async function automationsPayload(session: Session): Promise<unknown> {
  * read from the same files the agent reads.
  */
 async function understandingPayload(session: Session): Promise<unknown> {
-  const paths = midasPaths(session.workspaceRoot);
+  const paths = socialAgentsPaths(session.workspaceRoot);
   const config = session.config;
   const summary = summarizeActivity((await allActivity(session)).entries);
 
@@ -483,14 +483,14 @@ function isEditablePath(workspaceRoot: string, id: string): string | null {
   const full = resolve(workspaceRoot, id);
   const rel = relative(workspaceRoot, full);
   const allowed =
-    rel === join('midas', 'BRAND.md') ||
-    rel.startsWith(join('midas', 'skills') + '/') ||
+    rel === join('social-agents', 'BRAND.md') ||
+    rel.startsWith(join('social-agents', 'skills') + '/') ||
     rel.startsWith(join('templates', 'skills') + '/');
   return allowed && rel.endsWith('.md') ? full : null;
 }
 
 async function brandPayload(session: Session): Promise<unknown> {
-  const paths = midasPaths(session.workspaceRoot);
+  const paths = socialAgentsPaths(session.workspaceRoot);
   try {
     const [content, s] = await Promise.all([readFile(paths.brandMd, 'utf8'), stat(paths.brandMd)]);
     return {
@@ -507,11 +507,11 @@ async function brandPayload(session: Session): Promise<unknown> {
 
 /**
  * Training files = the skill playbooks the agent executes. Installed ones
- * (midas/skills/) take precedence; on a fresh clone the repo templates
+ * (social-agents/skills/) take precedence; on a fresh clone the repo templates
  * (templates/skills/) are listed so there is always something to read.
  */
 async function workflowFilesPayload(session: Session): Promise<unknown> {
-  const paths = midasPaths(session.workspaceRoot);
+  const paths = socialAgentsPaths(session.workspaceRoot);
   const roots = existsSync(paths.skillsDir)
     ? [{ dir: paths.skillsDir, source: 'installed' }]
     : [{ dir: join(REPO_ROOT, 'templates', 'skills'), source: 'template' }];
@@ -581,13 +581,13 @@ async function handleChat(session: Session, req: IncomingMessage, res: ServerRes
   const send = (event: Record<string, unknown>) => res.write(`${sanitize(JSON.stringify(event))}\n`);
 
   if (!session.client) {
-    send({ type: 'error', text: 'Connect your CreatorOS account first — run `npm start creatoros midas` in a terminal.' });
+    send({ type: 'error', text: 'Connect your CreatorOS account first — run `npm start creatoros social-agents` in a terminal.' });
     send({ type: 'done' });
     res.end();
     return;
   }
   if (!session.brain) {
-    send({ type: 'error', text: 'The AI brain is not connected on this machine. Run `midas` once in a terminal to plug it in, then restart the dashboard.' });
+    send({ type: 'error', text: 'The AI brain is not connected on this machine. Run `social-agents` once in a terminal to plug it in, then restart the dashboard.' });
     send({ type: 'done' });
     res.end();
     return;
@@ -677,8 +677,9 @@ export interface DashboardHandle {
 
 export async function startDashboard(
   workspaceRoot: string = REPO_ROOT,
-  port: number = Number(process.env.MIDAS_DASHBOARD_PORT) || DEFAULT_PORT,
+  port: number = Number(process.env.SOCIAL_AGENTS_DASHBOARD_PORT ?? process.env.MIDAS_DASHBOARD_PORT) || DEFAULT_PORT,
 ): Promise<DashboardHandle> {
+  migrateLegacyWorkspace(workspaceRoot);
   const session = await loadSession(workspaceRoot);
 
   const server = createServer((req, res) => {
@@ -715,7 +716,7 @@ export async function startDashboard(
       if (route === 'GET /api/workflows') return json(res, 200, await workflowFilesPayload(session));
       if (route === 'PUT /api/brand' || route === 'PUT /api/workflows') {
         const body = JSON.parse((await readBody(req)) || '{}') as { id?: string; content?: string };
-        const paths = midasPaths(session.workspaceRoot);
+        const paths = socialAgentsPaths(session.workspaceRoot);
         const id = route === 'PUT /api/brand' ? relative(session.workspaceRoot, paths.brandMd) : (body.id ?? '');
         if (typeof body.content !== 'string') return json(res, 400, { error: 'content required' });
         const result = await saveFile(session, id, body.content);
@@ -759,9 +760,9 @@ const invokedDirectly = process.argv[1]?.replace(/\\/g, '/').endsWith('dashboard
 if (invokedDirectly) {
   startDashboard()
     .then(({ url }) => {
-      console.log('\n  ┌──────────────────────────────────────────────┐');
-      console.log(`  │  Midas Dashboard →  ${url.padEnd(23)} │`);
-      console.log('  └──────────────────────────────────────────────┘');
+      console.log('\n  ┌──────────────────────────────────────────────────────┐');
+      console.log(`  │  Social Agents Dashboard →  ${url.padEnd(23)} │`);
+      console.log('  └──────────────────────────────────────────────────────┘');
       console.log('  Reads local files + your CreatorOS account. Ctrl-C stops it;');
       console.log('  automations keep running on their schedules either way.\n');
       openBrowser(url);

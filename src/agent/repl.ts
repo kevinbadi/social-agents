@@ -1,5 +1,5 @@
 /**
- * The Midas chat — every run after onboarding lands here. Styled after
+ * The Social Agents chat — every run after onboarding lands here. Styled after
  * the Claude Code chat surface: ❯ input, ⏺ output bullets, live tool
  * activity lines, a spinner with elapsed time, and esc to interrupt.
  * Two engines behind the same surface: the Claude Agent SDK, or any
@@ -8,10 +8,10 @@
 import { createInterface } from 'node:readline/promises';
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import type { CreatorOSClient } from '../client/client.js';
-import { saveConfig, type MidasConfig } from '../config/midasConfig.js';
+import { saveConfig, type SocialAgentsConfig } from '../config/socialAgentsConfig.js';
 import type { BrainConfig } from '../util/brain.js';
 import { describeBrain, ensureBrainReady, toSettings } from '../config/brainSetup.js';
-import { midasPaths } from '../paths.js';
+import { socialAgentsPaths } from '../paths.js';
 import { buildSystemPrompt } from './systemPrompt.js';
 import { buildToolServer } from './tools.js';
 import { sanitize } from '../util/sanitize.js';
@@ -124,7 +124,7 @@ interface TurnSpinner {
 /**
  * The very first prompt after onboarding cold-starts the whole agent
  * environment — a long, silent wait. So the wait becomes the moment:
- * an egg. The Midas star incubates inside a shell that cracks open in
+ * an egg. The Social Agents star incubates inside a shell that cracks open in
  * stages as the environment spins up, and the first sign of life from
  * the agent plays the birth line. Every later turn gets the plain
  * spinner; hatching only happens once.
@@ -216,7 +216,7 @@ function armEscInterrupt(onEsc: () => void): () => void {
 }
 
 /**
- * Type Midas's reply on, Claude-Code style. Markdown is converted to ANSI
+ * Type Social Agents' reply on, Claude-Code style. Markdown is converted to ANSI
  * styling (no raw asterisks), and long replies speed up so the animation
  * never drags.
  */
@@ -274,12 +274,12 @@ function printToolResult(block: { content?: unknown; is_error?: boolean }): void
 
 function printHelp(): void {
   console.log(
-    `\n${DIM}  /new    start a fresh conversation (Midas forgets this session, keeps midas/ files)\n` +
-      `  /setup  print your setup prompt (midas/SETUP_PROMPT.md)\n` +
+    `\n${DIM}  /new    start a fresh conversation (Social Agents forgets this session, keeps social-agents/ files)\n` +
+      `  /setup  print your setup prompt (social-agents/SETUP_PROMPT.md)\n` +
       `  /help   this\n` +
       `  exit    leave (scheduled posts publish from CreatorOS servers either way)\n` +
-      `  esc     interrupt Midas mid-turn\n` +
-      `  midas     in another terminal: a second, independent session on this same workspace${RESET}\n`,
+      `  esc     interrupt Social Agents mid-turn\n` +
+      `  social-agents     in another terminal: a second, independent session on this same workspace${RESET}\n`,
   );
 }
 
@@ -413,7 +413,7 @@ function printWelcomeCard(lines: string[]): void {
 
 export async function runRepl(
   client: CreatorOSClient,
-  config: MidasConfig | null,
+  config: SocialAgentsConfig | null,
   workspaceRoot: string,
   options: { justOnboarded?: boolean } = {},
 ): Promise<void> {
@@ -431,13 +431,13 @@ export async function runRepl(
     const settings = toSettings(brain);
     if (JSON.stringify(settings) !== JSON.stringify(config.brain ?? { provider: 'claude' })) {
       config.brain = settings;
-      await saveConfig(midasPaths(workspaceRoot).configJson, config);
+      await saveConfig(socialAgentsPaths(workspaceRoot).configJson, config);
     }
   }
 
   console.log(BANNER);
   printWelcomeCard([
-    `${AMBER}✻${RESET} ${SILVER}Midas — the CreatorOS agent${RESET}`,
+    `${AMBER}✻${RESET} ${SILVER}Social Agents — the CreatorOS agent${RESET}`,
     '',
     `${DIM}key${RESET}      ${client.maskedKey}`,
     `${DIM}pathway${RESET}  ${config?.automationTarget ?? 'local'} · ${config?.timezone ?? 'UTC'}`,
@@ -476,13 +476,13 @@ export async function runRepl(
     }
     if (trimmed === '/new') {
       sessionId = undefined;
-      console.log(`${DIM}  fresh conversation — midas/ files still loaded${RESET}`);
+      console.log(`${DIM}  fresh conversation — social-agents/ files still loaded${RESET}`);
       continue;
     }
     if (trimmed === '/setup') {
       try {
         const { readFile } = await import('node:fs/promises');
-        console.log(await readFile(`${workspaceRoot}/midas/SETUP_PROMPT.md`, 'utf8'));
+        console.log(await readFile(`${workspaceRoot}/social-agents/SETUP_PROMPT.md`, 'utf8'));
       } catch {
         console.log(`${DIM}  no setup prompt found — finish onboarding first${RESET}`);
       }
@@ -512,14 +512,14 @@ export async function runRepl(
         spinner instanceof HatchSpinner
           ? ''
           : sessionId
-            ? 'midas is thinking…'
+            ? 'social agents are thinking…'
             : 'waking the engine — first reply takes ~15s…',
       );
       try {
         for await (const message of turn) {
           if (message.type === 'system' && message.subtype === 'init') {
             sessionId = message.session_id;
-            spinner.setLabel('midas is thinking…');
+            spinner.setLabel('social agents are thinking…');
           } else if (message.type === 'assistant') {
             for (const block of message.message.content) {
               if (block.type === 'text' && block.text.trim()) {
@@ -530,7 +530,7 @@ export async function runRepl(
                 printToolLine(block.name, block.input);
               }
             }
-            spinner.start('midas is cooking…');
+            spinner.start('social agents are cooking…');
           } else if (message.type === 'user') {
             const content = (message as { message?: { content?: unknown } }).message?.content;
             if (Array.isArray(content)) {
@@ -540,13 +540,13 @@ export async function runRepl(
                   printToolResult(block as { content?: unknown; is_error?: boolean });
                 }
               }
-              spinner.start('midas is cooking…');
+              spinner.start('social agents are cooking…');
             }
           } else if (message.type === 'result') {
             spinner.stop();
             if (message.subtype !== 'success') {
               const detail = 'result' in message && message.result ? ` — ${sanitize(String(message.result))}` : '';
-              console.error(`\n(midas hit a wall: ${message.subtype}${detail})\n`);
+              console.error(`\n(social agents hit a wall: ${message.subtype}${detail})\n`);
             }
           }
         }
@@ -556,9 +556,9 @@ export async function runRepl(
       }
     } catch (error) {
       spinner.stop();
-      console.error(`\n(midas error: ${sanitize((error as Error).message)})\n`);
+      console.error(`\n(social agents error: ${sanitize((error as Error).message)})\n`);
     }
     console.log('');
   }
-  console.log(`\n${DIM}Midas out. Your scheduled posts publish from CreatorOS servers either way.${RESET}`);
+  console.log(`\n${DIM}Social Agents out. Your scheduled posts publish from CreatorOS servers either way.${RESET}`);
 }

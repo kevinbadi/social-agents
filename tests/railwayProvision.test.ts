@@ -25,7 +25,7 @@ describe('provisioning building blocks', () => {
     const joined = args.join(' ');
     expect(joined).toContain('CREATOROS_API_KEY=');
     expect(joined).toContain('ANTHROPIC_API_KEY=sk-ant-xyz');
-    expect(joined).toContain('MIDAS_WORKER_TOKEN=worker-secret');
+    expect(joined).toContain('SOCIAL_AGENTS_WORKER_TOKEN=worker-secret');
     expect(joined).toContain('TZ=America/Toronto');
     expect(joined).toContain('RAILWAY_DOCKERFILE_PATH=Dockerfile.worker');
   });
@@ -40,16 +40,16 @@ describe('provisioning building blocks', () => {
     const args = provisionVariableArgs({ ...INPUTS, ai: null });
     const joined = args.join(' ');
     expect(joined).toContain('CREATOROS_API_KEY=');
-    expect(joined).toContain('MIDAS_WORKER_TOKEN=');
+    expect(joined).toContain('SOCIAL_AGENTS_WORKER_TOKEN=');
     expect(joined).not.toContain('ANTHROPIC_API_KEY=');
     expect(joined).not.toContain('CLAUDE_CODE_OAUTH_TOKEN=');
   });
 
   it('parses the generated domain and service id from CLI output', () => {
-    expect(parseDomain('Service Domain created:\nhttps://midas-worker-production.up.railway.app\n')).toBe(
-      'https://midas-worker-production.up.railway.app',
+    expect(parseDomain('Service Domain created:\nhttps://social-agents-worker-production.up.railway.app\n')).toBe(
+      'https://social-agents-worker-production.up.railway.app',
     );
-    expect(parseDomain('midas-abc123.up.railway.app')).toBe('https://midas-abc123.up.railway.app');
+    expect(parseDomain('social-agents-abc123.up.railway.app')).toBe('https://social-agents-abc123.up.railway.app');
     expect(parseDomain('no domain here')).toBe(null);
     expect(parseServiceId(JSON.stringify({ services: { edges: [{ node: { id: 'svc-1' } }] } }))).toBe('svc-1');
     expect(parseServiceId('garbage')).toBe(null);
@@ -62,7 +62,7 @@ describe('provisionRailwayWorker orchestration (mocked CLI)', () => {
 
   it('happy path: init → variables → up → domain → status, reports the url', async () => {
     const runner = cli({
-      domain: { code: 0, stdout: 'https://midas-w.up.railway.app', stderr: '' },
+      domain: { code: 0, stdout: 'https://social-agents-w.up.railway.app', stderr: '' },
       status: { code: 0, stdout: JSON.stringify({ services: { edges: [{ node: { id: 'svc-9' } }] } }), stderr: '' },
     });
     // Health-check fetch will fail (no server) — result is ok-but-not-healthy.
@@ -73,7 +73,7 @@ describe('provisionRailwayWorker orchestration (mocked CLI)', () => {
       runner as never,
     );
     expect(result.ok).toBe(true);
-    expect(result.url).toBe('https://midas-w.up.railway.app');
+    expect(result.url).toBe('https://social-agents-w.up.railway.app');
     expect(result.serviceId).toBe('svc-9');
     expect(progress.some((l) => l.includes('Uploading'))).toBe(true);
   });
@@ -99,8 +99,8 @@ describe('provisionRailwayWorker orchestration (mocked CLI)', () => {
     const calls: string[][] = [];
     const runner = vi.fn(async (args: string[]) => {
       calls.push(args);
-      if (args[0] === 'status') return { code: 0, stdout: JSON.stringify({ name: 'midas-worker' }), stderr: '' };
-      if (args[0] === 'domain') return { code: 0, stdout: 'midas-w.up.railway.app', stderr: '' };
+      if (args[0] === 'status') return { code: 0, stdout: JSON.stringify({ name: 'social-agents-worker' }), stderr: '' };
+      if (args[0] === 'domain') return { code: 0, stdout: 'social-agents-w.up.railway.app', stderr: '' };
       return { code: 0, stdout: '', stderr: '' };
     });
     const result = await provisionRailwayWorker(INPUTS, () => {}, runner as never);
@@ -108,7 +108,7 @@ describe('provisionRailwayWorker orchestration (mocked CLI)', () => {
     // unlink comes before init — the stale link is gone before anything is created
     expect(calls.findIndex((a) => a[0] === 'unlink')).toBeLessThan(calls.findIndex((a) => a[0] === 'init'));
     // --no-gitignore is load-bearing: plain `railway up` drops the
-    // gitignored midas/ and ships a worker with no workspace.
+    // gitignored social-agents/ and ships a worker with no workspace.
     expect(calls.find((a) => a[0] === 'up')).toContain('--no-gitignore');
   });
 
@@ -119,14 +119,14 @@ describe('provisionRailwayWorker orchestration (mocked CLI)', () => {
     const result = await provisionRailwayWorker(INPUTS, () => {}, runner as never);
     expect(result.ok).toBe(false);
     expect(result.error).toContain('my-old-blog');
-    expect(result.error).toContain('midas-worker');
+    expect(result.error).toContain('social-agents-worker');
     // and crucially: no variables were set, nothing was uploaded
     expect(runner.mock.calls.map((c) => (c[0] as string[])[0])).not.toContain('variables');
     expect(runner.mock.calls.map((c) => (c[0] as string[])[0])).not.toContain('up');
   });
 
   it('parses the project name from both status shapes', () => {
-    expect(parseProjectName(JSON.stringify({ name: 'midas-worker' }))).toBe('midas-worker');
+    expect(parseProjectName(JSON.stringify({ name: 'social-agents-worker' }))).toBe('social-agents-worker');
     expect(parseProjectName(JSON.stringify({ project: { name: 'other' } }))).toBe('other');
     expect(parseProjectName('not json')).toBe(null);
   });
@@ -138,7 +138,7 @@ describe('upload manifest', () => {
     const { tmpdir } = await import('node:os');
     const { join: j } = await import('node:path');
     const { ensureRailwayIgnore } = await import('../src/automations/railwayProvision.js');
-    const root = await mkdtemp(j(tmpdir(), 'midas-rwignore-'));
+    const root = await mkdtemp(j(tmpdir(), 'social-agents-rwignore-'));
     await ensureRailwayIgnore(root);
     const written = await rf(j(root, '.railwayignore'), 'utf8');
     expect(written).toContain('node_modules');

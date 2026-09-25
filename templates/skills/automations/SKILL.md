@@ -3,13 +3,13 @@
 Set up hands-off systems. Two kinds, and picking the right one matters:
 
 1. **CreatorOS cloud automations** (run on CreatorOS servers): comment-to-DM funnels. Deterministic if-this-then-that — keyword comment → DM with link/offer. Tools: `create_funnel`, `list_funnels`, `update_funnel`, `delete_funnel`, `funnel_logs`. The full playbook (per-post vs account-wide scoping, swapping funnels, daily log checks) is the `comment-dm-funnel` skill — use it for anything beyond a quick create.
-2. **Scheduled agent runs** (cron): a full agent executes a Midas skill on a schedule — judgment work like triaging comments, picking the day's clip, writing the weekly report. Tools: `create_cron_automation`, `list_cron_automations`. The pathway comes from `midas/midas.json` (`automationTarget`): `local` = launchd on this machine (must be awake at the scheduled time), `railway` = always-on cloud.
+2. **Scheduled agent runs** (cron): a full agent executes a Social Agents skill on a schedule — judgment work like triaging comments, picking the day's clip, writing the weekly report. Tools: `create_cron_automation`, `list_cron_automations`. The pathway comes from `social-agents/social-agents.json` (`automationTarget`): `local` = launchd on this machine (must be awake at the scheduled time), `railway` = always-on cloud.
 
 Plain scheduled *posts* need neither — `create_post` with `scheduledFor` publishes from CreatorOS servers.
 
 ## Before anything
 
-Read `midas/midas.json` for the pathway and timezone; `midas/BRAND.md` for funnel links and copy. Before building a pattern you haven't built before, check `midas/knowledge/TUTORIALS.md` and follow the taught pattern.
+Read `social-agents/social-agents.json` for the pathway and timezone; `social-agents/BRAND.md` for funnel links and copy. Before building a pattern you haven't built before, check `social-agents/knowledge/TUTORIALS.md` and follow the taught pattern.
 
 ## Procedure — comment-to-DM funnel
 

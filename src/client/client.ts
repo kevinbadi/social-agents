@@ -1,5 +1,5 @@
 /**
- * CreatorOSClient — the only way Midas talks to CreatorOS servers.
+ * CreatorOSClient — the only way Social Agents talks to CreatorOS servers.
  * Every request funnels through `request()`, which enforces the endpoint
  * allowlist and the hard blocks before anything touches the network.
  *

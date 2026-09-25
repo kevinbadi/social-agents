@@ -73,7 +73,7 @@ describe('transient error classification (retry once, not forever)', () => {
 
 describe('worker automations file + pathway integration', () => {
   it('upserts, lists, and removes automations', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'midas-worker-'));
+    const root = await mkdtemp(join(tmpdir(), 'social-agents-worker-'));
     await upsertWorkerAutomation(root, { name: 'engagement-sweep', schedule: '0 9,15,21 * * *', skill: 'respond-to-comments', enabled: true, model: 'claude-haiku-4-5-20251001' });
     await upsertWorkerAutomation(root, { name: 'weekly-analytics', schedule: '0 8 * * 1', skill: 'analytics-report', enabled: true });
     await upsertWorkerAutomation(root, { name: 'engagement-sweep', schedule: '0 9 * * *', skill: 'respond-to-comments', enabled: false });
@@ -85,7 +85,7 @@ describe('worker automations file + pathway integration', () => {
   });
 
   it('rejects a bad schedule before anything lands on disk', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'midas-worker-'));
+    const root = await mkdtemp(join(tmpdir(), 'social-agents-worker-'));
     await expect(
       upsertWorkerAutomation(root, { name: 'x', schedule: 'every day', skill: 's', enabled: true }),
     ).rejects.toThrow();
@@ -93,7 +93,7 @@ describe('worker automations file + pathway integration', () => {
   });
 
   it('createAutomation on the railway pathway writes the file — no CLI, no network', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'midas-worker-'));
+    const root = await mkdtemp(join(tmpdir(), 'social-agents-worker-'));
     const result = await createAutomation(
       root,
       { name: 'daily-shortform', schedule: '0 10 * * *', skill: 'post-shortform', pillar: 'content', description: 'daily clip' },

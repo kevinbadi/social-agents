@@ -1,6 +1,6 @@
 ---
 name: agent-posts
-description: Agent Posts. Hand Midas a finished vertical video and it transcribes it, pulls the "comment X" keyword, writes on-brand captions for every platform, builds a 9:16 cover, schedules the post to every connected social through CreatorOS, verifies it, and (with sign-off) arms the comment-to-DM funnel. Use when a user drops a video to post, asks to schedule agent posts, fix a cover or title, or publish now.
+description: Agent Posts. Hand Social Agents a finished vertical video and it transcribes it, pulls the "comment X" keyword, writes on-brand captions for every platform, builds a 9:16 cover, schedules the post to every connected social through CreatorOS, verifies it, and (with sign-off) arms the comment-to-DM funnel. Use when a user drops a video to post, asks to schedule agent posts, fix a cover or title, or publish now.
 ---
 
 # Agent Posts
@@ -12,13 +12,13 @@ do the mechanical work (transcript, cover). You are the writer.
 
 ## Before anything
 
-1. `node midas/skills/agent-posts/scripts/check-setup.mjs` — key, connected socials, ffmpeg, whisper. Fix the ✗ items before continuing. On the first run, if it reports no key, tell the user to get it at https://www.creatoros.ca/ (Settings -> API key) and re-run onboarding.
-2. Read `midas/BRAND.md` (no brand pack yet -> run the brand-interview skill first), `midas/PROFILES.md` (account IDs), `midas/midas.json` (timezone, profileId).
+1. `node social-agents/skills/agent-posts/scripts/check-setup.mjs` — key, connected socials, ffmpeg, whisper. Fix the ✗ items before continuing. On the first run, if it reports no key, tell the user to get it at https://www.creatoros.ca/ (Settings -> API key) and re-run onboarding.
+2. Read `social-agents/BRAND.md` (no brand pack yet -> run the brand-interview skill first), `social-agents/PROFILES.md` (account IDs), `social-agents/social-agents.json` (timezone, profileId).
 3. Know the schedule-posts skill's scheduling schema cold. One mode per post: queue (`queuedFromProfile`), exact (`scheduledFor` + `timezone`), or `publishNow`. None = draft.
 
 ## The pipeline, one video
 
-`S=midas/skills/agent-posts/scripts/vertical-video-thumbnail/scripts`
+`S=social-agents/skills/agent-posts/scripts/vertical-video-thumbnail/scripts`
 
 1. **Transcribe.** `node $S/generate.mjs --video <mp4> --out <dir>/cover.png --caption-only` writes `<dir>/narration.json` (the transcript) and a heuristic caption draft. If the video has no spoken CTA, add `--no-cta`. Treat the draft as raw material only.
 2. **Keyword.** From the transcript, find the spoken "comment the word X". Whisper mishears brand words: read it back to the user and confirm the exact spelling. No spoken CTA -> ask whether they want one; if not, the post ships without a funnel.
@@ -31,7 +31,7 @@ do the mechanical work (transcript, cover). You are the writer.
    - Two ALL-CAPS hook lines for the cover (kicker + payoff, ~4 words each). No em or en dashes anywhere in overlay or captions.
    - DM text for the funnel (<= 640 chars, one link) and a short public comment reply.
 4. **Confirm with the human before anything is built:** keyword spelling, hook lines, DM copy, comment reply. This is a ground rule: the DM goes to strangers.
-5. **Cover.** `node $S/generate.mjs --video <mp4> --out <dir>/cover.png --transcript <dir>/narration.json --keyword X --line1 "…" --line2 "…"`. Default is a real frame from the video with the hook burned into the bottom plate. Generated scenes need `FAL_KEY`, `FAL_ALLOW=video-thumbnail`, and two or more photos of the creator in `midas/assets/identity/` (optional `identity.txt` describing them). Look at the cover before posting: hook spelling, keyword, nothing cut off in the 3:4 grid window.
+5. **Cover.** `node $S/generate.mjs --video <mp4> --out <dir>/cover.png --transcript <dir>/narration.json --keyword X --line1 "…" --line2 "…"`. Default is a real frame from the video with the hook burned into the bottom plate. Generated scenes need `FAL_KEY`, `FAL_ALLOW=video-thumbnail`, and two or more photos of the creator in `social-agents/assets/identity/` (optional `identity.txt` describing them). Look at the cover before posting: hook spelling, keyword, nothing cut off in the 3:4 grid window.
 6. **Upload.** `upload_media` the video, then the cover. Keep both URLs.
 7. **TikTok constraints.** `tiktok_creator_info` for each TikTok account: privacy level and consent flags go in that platform entry's `platformSpecificData`.
 8. **Post.** One `create_post` across every shortform-capable account in PROFILES.md (TikTok, Instagram, YouTube, X, Threads, Facebook, LinkedIn as connected): `mediaItems: [{ type: "video", url, thumbnail: <cover url> }]`, root `content` = the IG caption, per-platform `customContent` for Threads/X/YouTube/LinkedIn, YouTube title in `platformSpecificData`. Scheduling, in order of preference: `queuedFromProfile: <profileId>` (cadence lives in the user's CreatorOS queue — the posting frequency is theirs to set in the app, never compute slots yourself), an exact `scheduledFor` + `timezone` when the user names a time, `publishNow` when they say now.
@@ -64,7 +64,7 @@ The YouTube leg answers "comment X" comments with a public reply pointing at the
 agent-posts/
   SKILL.md                                   this playbook
   scripts/check-setup.mjs                    key -> live verify -> socials -> ffmpeg / whisper / fal
-  scripts/lib/creatoros-key.js               resolves the key from Midas credentials or env, never a repo file
+  scripts/lib/creatoros-key.js               resolves the key from Social Agents credentials or env, never a repo file
   scripts/lib/fal-gate.cjs                    fal spend is opt-in (FAL_ALLOW)
   scripts/vertical-video-thumbnail/          generate.mjs (transcript + cover), caption.mjs (draft helpers), assets/style-ref.png
 ```

@@ -1,6 +1,6 @@
 /**
- * First-run intro: the CreatorOS 3D wordmark animation, then the MIDAS
- * wordmark, then an animated checkmark rundown of everything Midas can do.
+ * First-run intro: the CreatorOS 3D wordmark animation, then the SOCIAL AGENTS
+ * wordmark, then an animated checkmark rundown of everything Social Agents can do.
  * Ported from the CreatorOS CLI banner so the look matches the app exactly.
  *
  * Block glyphs (█) carry an animated truecolor gradient; the box-drawing
@@ -23,6 +23,9 @@ const FONT: Record<string, string[]> = {
   M: ['███╗   ███╗', '████╗ ████║', '██╔████╔██║', '██║╚██╔╝██║', '██║ ╚═╝ ██║', '╚═╝     ╚═╝'],
   D: ['██████╗ ', '██╔══██╗', '██║  ██║', '██║  ██║', '██████╔╝', '╚═════╝ '],
   I: ['██╗', '██║', '██║', '██║', '██║', '╚═╝'],
+  G: [' ██████╗ ', '██╔════╝ ', '██║  ███╗', '██║   ██║', '╚██████╔╝', ' ╚═════╝ '],
+  L: ['██╗     ', '██║     ', '██║     ', '██║     ', '███████╗', '╚══════╝'],
+  N: ['███╗   ██╗', '████╗  ██║', '██╔██╗ ██║', '██║╚██╗██║', '██║ ╚████║', '╚═╝  ╚═══╝'],
   ' ': ['   ', '   ', '   ', '   ', '   ', '   '],
 };
 const ROWS = 6;
@@ -33,8 +36,8 @@ const CREATOROS_STOPS: Rgb[] = [
   [225, 232, 240],
   [56, 189, 248],
 ];
-// Midas palette: amber → warm white → gold (midas: the opportune moment)
-const MIDAS_STOPS: Rgb[] = [
+// Social Agents palette: amber → warm white → gold
+const SOCIAL_AGENTS_STOPS: Rgb[] = [
   [255, 176, 0],
   [255, 244, 214],
   [255, 122, 26],
@@ -52,7 +55,7 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 function isFancy(): boolean {
   return Boolean(
-    process.stdout.isTTY && !process.env.NO_COLOR && !process.env.CI && !process.env.MIDAS_NO_BANNER,
+    process.stdout.isTTY && !process.env.NO_COLOR && !process.env.CI && !process.env.SOCIAL_AGENTS_NO_BANNER,
   );
 }
 
@@ -173,8 +176,8 @@ export interface ChecklistSection {
   items: ChecklistItem[];
 }
 
-/** Everything Midas can actually do and has access to — shown on first run. */
-export const MIDAS_CAPABILITY_SECTIONS: ChecklistSection[] = [
+/** Everything Social Agents can actually do and has access to — shown on first run. */
+export const SOCIAL_AGENTS_CAPABILITY_SECTIONS: ChecklistSection[] = [
   {
     heading: 'Posting — every type',
     items: [
@@ -211,7 +214,7 @@ export const MIDAS_CAPABILITY_SECTIONS: ChecklistSection[] = [
       },
       {
         name: 'Marketing skills, built in',
-        detail: 'KevBuildsApps ships the best marketing skills + tutorials Midas reads directly',
+        detail: 'KevBuildsApps ships the best marketing skills + tutorials Social Agents reads directly',
       },
     ],
   },
@@ -250,7 +253,7 @@ export async function showChecklist(sections: ChecklistSection[], heading: strin
   }
 }
 
-// Claude's terracotta, flanked by Midas amber — the link bar sweeps across it.
+// Claude's terracotta, flanked by Social Agents amber — the link bar sweeps across it.
 const CLAUDE_STOPS: Rgb[] = [
   [255, 176, 0],
   [230, 150, 100],
@@ -259,7 +262,7 @@ const CLAUDE_STOPS: Rgb[] = [
 const CLAUDE_ORANGE = fg([217, 119, 87]);
 
 /**
- * The brain hookup: an energy link draws from MIDAS to CLAUDE, then
+ * The brain hookup: an energy link draws from SOCIAL AGENTS to CLAUDE, then
  * resolves to the actually-detected auth status.
  */
 export async function showBrainLink(status: BrainStatus): Promise<void> {
@@ -289,7 +292,7 @@ export async function showBrainLink(status: BrainStatus): Promise<void> {
           bar += `${DIM}─${RESET}`;
         }
       }
-      stdout.write(`\r  ${SILVER}MIDAS${RESET} ${bar}${RESET} ${CLAUDE_ORANGE}CLAUDE${RESET}`);
+      stdout.write(`\r  ${SILVER}SOCIAL AGENTS${RESET} ${bar}${RESET} ${CLAUDE_ORANGE}CLAUDE${RESET}`);
       await sleep(26);
     }
     await sleep(180);
@@ -303,13 +306,13 @@ export async function showBrainLink(status: BrainStatus): Promise<void> {
 }
 
 /**
- * The full first-run sequence: CreatorOS animation → Midas animation →
+ * The full first-run sequence: CreatorOS animation → Social Agents animation →
  * Claude brain link → capability checkmarks. Runs once, right before the
  * onboarding interview.
  */
 export async function showIntro(): Promise<void> {
   await showWordmark('CREATOR OS', 'the operating system for social media', CREATOROS_STOPS);
-  await showWordmark('MIDAS', 'your CreatorOS agent · posts · replies · reports', MIDAS_STOPS);
+  await showWordmark('SOCIAL AGENTS', 'your CreatorOS agent · posts · replies · reports', SOCIAL_AGENTS_STOPS);
   await showBrainLink(detectBrain());
-  await showChecklist(MIDAS_CAPABILITY_SECTIONS, 'what Midas runs for you');
+  await showChecklist(SOCIAL_AGENTS_CAPABILITY_SECTIONS, 'what Social Agents runs for you');
 }

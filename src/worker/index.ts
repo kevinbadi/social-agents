@@ -1,23 +1,23 @@
 /**
- * The Midas worker — the always-on Railway service that runs every
+ * The Social Agents worker — the always-on Railway service that runs every
  * scheduled automation for one workspace in a single process.
  *
  *   npm run worker        (Railway start command; locally for testing)
  *
- * Reads midas/automations.json, computes next-run times, executes each
+ * Reads social-agents/automations.json, computes next-run times, executes each
  * due automation SERIALLY through the headless runner (one at a time —
  * no API bursts, no activity-log races), journals every run through the
  * storage port, and serves /health + /runs for the dashboard.
  *
  * Required env on Railway: CREATOROS_API_KEY, and an AI credential
  * (ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN). Recommended:
- * MIDAS_WORKER_TOKEN (protects the status routes), TZ (the user's
+ * SOCIAL_AGENTS_WORKER_TOKEN (protects the status routes), TZ (the user's
  * timezone so cron hours mean their hours), PORT (Railway injects it).
  */
 import { CreatorOSClient, isValidKeyShape } from '../client/client.js';
-import { loadConfig } from '../config/midasConfig.js';
+import { loadConfig } from '../config/socialAgentsConfig.js';
 import { resolveApiKey } from '../config/credentials.js';
-import { midasPaths } from '../paths.js';
+import { migrateLegacyWorkspace, socialAgentsPaths } from '../paths.js';
 import { JsonlStore } from '../storage/jsonlStore.js';
 import { loadWorkerAutomations, type WorkerAutomation } from './automations.js';
 import { nextRun } from './schedule.js';
@@ -29,7 +29,8 @@ const RETRY_DELAY_MS = 60_000;
 
 async function main(): Promise<void> {
   const root = process.cwd();
-  const paths = midasPaths(root);
+  migrateLegacyWorkspace(root);
+  const paths = socialAgentsPaths(root);
   const config = await loadConfig(paths.configJson);
   const apiKey = await resolveApiKey();
   if (!apiKey || !isValidKeyShape(apiKey)) {
@@ -137,7 +138,7 @@ async function main(): Promise<void> {
   setInterval(() => void tick(), TICK_MS);
 
   const getHealth = (): WorkerHealth => ({
-    service: 'midas-worker',
+    service: 'social-agents-worker',
     startedAt,
     timezone: process.env.TZ ?? config?.timezone ?? 'UTC',
     automations: automations.map((a) => ({
@@ -150,11 +151,11 @@ async function main(): Promise<void> {
     running,
   });
 
-  const token = process.env.MIDAS_WORKER_TOKEN;
-  if (!token) console.warn('worker: MIDAS_WORKER_TOKEN not set — /health and /runs are unauthenticated.');
+  const token = process.env.SOCIAL_AGENTS_WORKER_TOKEN ?? process.env.MIDAS_WORKER_TOKEN;
+  if (!token) console.warn('worker: SOCIAL_AGENTS_WORKER_TOKEN not set — /health and /runs are unauthenticated.');
   const port = Number(process.env.PORT ?? 8790);
   createWorkerServer({ token, getHealth, store, workspaceRoot: root }).listen(port, () => {
-    console.log(`midas-worker up on :${port} — ${automations.filter((a) => a.enabled).length} automation(s) scheduled.`);
+    console.log(`social-agents-worker up on :${port} — ${automations.filter((a) => a.enabled).length} automation(s) scheduled.`);
   });
 }
 

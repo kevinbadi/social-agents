@@ -10,17 +10,17 @@ import { execFileSync } from "node:child_process";
 import { creatorOsKeySource } from "./lib/creatoros-key.js";
 
 const BASE = process.env.ZERNIO_BASE_URL || "https://zernio.com/api/v1";
-const IDENTITY_DIR = path.resolve(process.env.AGENT_POSTS_IDENTITY_DIR || "midas/assets/identity");
+const IDENTITY_DIR = path.resolve(process.env.AGENT_POSTS_IDENTITY_DIR || "social-agents/assets/identity");
 
 const ONBOARD = `
   CreatorOS API key required
   ---------------------------
-  Agent Posts posts through your CreatorOS API key, the same key Midas
+  Agent Posts posts through your CreatorOS API key, the same key Social Agents
   onboarding asks for.
 
     1. Go to https://www.creatoros.ca/ and sign in (sign up first if you are new).
     2. Open Settings -> API key and copy it.
-    3. Run Midas onboarding (npm start creatoros midas) and paste it there, or
+    3. Run Social Agents onboarding (npm start creatoros social-agents) and paste it there, or
        export CREATOROS_API_KEY=<your key> in your shell.
        Never paste the key into a repo file.
 

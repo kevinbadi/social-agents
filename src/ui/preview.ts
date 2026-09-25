@@ -5,7 +5,7 @@
  * renderer; non-TTY terminals get the plain transcript.
  */
 
-import type { EngagementObjective } from '../config/midasConfig.js';
+import type { EngagementObjective } from '../config/socialAgentsConfig.js';
 
 export interface PreviewInput {
   keyword: string;
@@ -18,7 +18,7 @@ export interface PreviewInput {
 }
 
 export interface PreviewLine {
-  who: 'commenter' | 'midas' | 'system';
+  who: 'commenter' | 'social-agents' | 'system';
   text: string;
 }
 
@@ -45,9 +45,9 @@ export function buildPreviewScript(input: PreviewInput): PreviewLine[] {
     { who: 'system', text: `${handle} commented on your latest post:` },
     { who: 'commenter', text: `"${input.keyword}"` },
     { who: 'system', text: `keyword matched → funnel fired, DM sent automatically` },
-    { who: 'midas', text: input.dmMessage + (input.link ? `  [ ${input.link} ]` : '') },
+    { who: 'social-agents', text: input.dmMessage + (input.link ? `  [ ${input.link} ]` : '') },
     { who: 'commenter', text: 'yo thanks! quick question — is this good for beginners?' },
-    { who: 'midas', text: closerFor(input) },
+    { who: 'social-agents', text: closerFor(input) },
     { who: 'system', text: 'sensitive topics (refunds, complaints, legal) always escalate to you instead' },
   ];
   return lines;
@@ -63,7 +63,7 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 function isFancy(): boolean {
   return Boolean(
-    process.stdout.isTTY && !process.env.NO_COLOR && !process.env.CI && !process.env.MIDAS_NO_BANNER,
+    process.stdout.isTTY && !process.env.NO_COLOR && !process.env.CI && !process.env.SOCIAL_AGENTS_NO_BANNER,
   );
 }
 
@@ -75,7 +75,7 @@ export async function showEngagementPreview(input: PreviewInput): Promise<void> 
   if (!isFancy()) {
     console.log('\npreview — how your funnel + replies will play out:');
     for (const line of script) {
-      const prefix = line.who === 'midas' ? 'Midas (DM):' : line.who === 'commenter' ? (input.handle ?? '@new_follower') + ':' : '·';
+      const prefix = line.who === 'social-agents' ? 'Social Agents (DM):' : line.who === 'commenter' ? (input.handle ?? '@new_follower') + ':' : '·';
       console.log(`  ${prefix} ${line.text}`);
     }
     console.log('');
@@ -92,13 +92,13 @@ export async function showEngagementPreview(input: PreviewInput): Promise<void> 
         await sleep(450);
         continue;
       }
-      const isMidas = line.who === 'midas';
-      const label = isMidas ? `${AMBER}Midas${RESET}${DIM} (DM)${RESET} ` : `${SILVER}${input.handle ?? '@new_follower'}${RESET} `;
+      const isAgent = line.who === 'social-agents';
+      const label = isAgent ? `${AMBER}Social Agents${RESET}${DIM} (DM)${RESET} ` : `${SILVER}${input.handle ?? '@new_follower'}${RESET} `;
       // typing indicator, then the message types on
       stdout.write(`  ${label}${DIM}…${RESET}`);
-      await sleep(isMidas ? 650 : 450);
+      await sleep(isAgent ? 650 : 450);
       stdout.write(`\r\x1b[2K  ${label}`);
-      const color = isMidas ? CYAN : SILVER;
+      const color = isAgent ? CYAN : SILVER;
       for (const ch of line.text) {
         stdout.write(color + ch + RESET);
         await sleep(ch === ' ' ? 4 : 9);

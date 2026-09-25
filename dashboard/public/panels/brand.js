@@ -1,5 +1,5 @@
 /**
- * Brand — the agent's personality file (midas/BRAND.md), rendered as
+ * Brand — the agent's personality file (social-agents/BRAND.md), rendered as
  * markdown with edit-in-place. The path + last-modified are shown so
  * users trust this is exactly what the agent reads.
  */
@@ -68,7 +68,7 @@ export default {
         card('No brand file yet',
           h('p', { style: 'margin-bottom:12px' },
             `The agent reads its personality from ${file.path}, and that file doesn't exist yet. The onboarding interview writes it:`),
-          h('div', { class: 'code-row' }, h('code', {}, 'npm start creatoros midas')),
+          h('div', { class: 'code-row' }, h('code', {}, 'npm start creatoros social-agents')),
         ),
       );
       return;
@@ -76,6 +76,6 @@ export default {
     const hint = note('brand-edit',
       'Edits save straight back to disk — the agent reads the latest version on its next action. No restart needed.');
     if (hint) root.append(hint);
-    root.append(card('midas/BRAND.md', fileEditor(ctx, file, { url: '/api/brand', extra: {} })));
+    root.append(card('social-agents/BRAND.md', fileEditor(ctx, file, { url: '/api/brand', extra: {} })));
   },
 };

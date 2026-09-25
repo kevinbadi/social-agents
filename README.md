@@ -1,15 +1,15 @@
-# Midas
+# Social Agents
 
-**Midas is an open-source marketing agent that runs your entire social presence on [CreatorOS](https://www.creatoros.ca/).** CreatorOS is the service underneath: it holds your connected socials and does the actual posting, replying, and analytics. Midas is the agent that drives it. You sign up at [creatoros.ca](https://www.creatoros.ca/), connect your socials, copy your API key, and Midas takes it from there: a two-question setup, then an agent that interviews you about your brand and posts, replies, reports, and automates on your behalf.
+**Social Agents is an open-source marketing agent that runs your entire social presence on [CreatorOS](https://www.creatoros.ca/).** CreatorOS is the service underneath: it holds your connected socials and does the actual posting, replying, and analytics. Social Agents is the agent that drives it. You sign up at [creatoros.ca](https://www.creatoros.ca/), connect your socials, copy your API key, and Social Agents takes it from there: a two-question setup, then an agent that interviews you about your brand and posts, replies, reports, and automates on your behalf.
 
-Midas's mission is simple: **hold your hand through setup, then make you autonomous.** Every client's setup is different, but everyone wants the same four things:
+Social Agents' mission is simple: **hold your hand through setup, then make you autonomous.** Every client's setup is different, but everyone wants the same four things:
 
 1. **Post content at scale with AI** — shortform, longform, carousels, threads, multiposting, scheduling
 2. **Run it all on automations** — cron jobs on your Mac or an always-on cloud service
 3. **Auto-reply to comments and messages** — on-brand, with sensitive stuff escalated to you
 4. **Monitor analytics** — growth, best posts, competitor movement, one recommendation a week
 
-The end state Midas drives toward: all four pillars on cron jobs — content posting itself, analytics checked and reported, comments and messages answered — fully autonomous, with you only reviewing what Midas surfaces.
+The end state Social Agents drives toward: all four pillars on cron jobs — content posting itself, analytics checked and reported, comments and messages answered — fully autonomous, with you only reviewing what Social Agents surfaces.
 
 ## Quick start
 
@@ -22,14 +22,14 @@ The end state Midas drives toward: all four pillars on cron jobs — content pos
 #    No AI setup, no model keys — two questions and you're in.
 
 # 3. Go.
-npm start creatoros midas
+npm start creatoros social-agents
 ```
 
-**First run** is a two-question form: creator or agency, then your CreatorOS API key (masked, validated live). It maps your connected accounts into `midas/PROFILES.md`, writes the workspace (`CLAUDE.md` at the root plus `midas/`), and tells you to go talk to your marketing agent. The agent takes it from there in chat: it interviews you about your brand (`brand-interview` skill → `midas/BRAND.md`), asks where automations should live (local or a Railway worker it builds for you), and offers the automation menu. Any agent opened in this folder reads `CLAUDE.md` and picks up the same brief; `midas/SETUP_PROMPT.md` holds it as a paste-able prompt. Because setup lives in files, not in one chat, you can spin up as many parallel agent sessions as you like.
+**First run** is a two-question form: creator or agency, then your CreatorOS API key (masked, validated live). It maps your connected accounts into `social-agents/PROFILES.md`, writes the workspace (`CLAUDE.md` at the root plus `social-agents/`), and tells you to go talk to your marketing agent. The agent takes it from there in chat: it interviews you about your brand (`brand-interview` skill → `social-agents/BRAND.md`), asks where automations should live (local or a Railway worker it builds for you), and offers the automation menu. Any agent opened in this folder reads `CLAUDE.md` and picks up the same brief; `social-agents/SETUP_PROMPT.md` holds it as a paste-able prompt. Because setup lives in files, not in one chat, you can spin up as many parallel agent sessions as you like.
 
-For the agent chat itself you bring a brain: logged-in Claude Code (runs on your Claude plan, recommended), `ANTHROPIC_API_KEY`, or any model behind an Anthropic-compatible API (Moonshot/Kimi, DeepSeek, GLM…) — the built-in `midas` chat asks on first launch.
+For the agent chat itself you bring a brain: logged-in Claude Code (runs on your Claude plan, recommended), `ANTHROPIC_API_KEY`, or any model behind an Anthropic-compatible API (Moonshot/Kimi, DeepSeek, GLM…) — the built-in `social-agents` chat asks on first launch.
 
-**Every later run** drops you into the Midas REPL:
+**Every later run** drops you into the Social Agents REPL:
 
 ```
 you ▸ post this clip everywhere: content-library/day1.mp4
@@ -38,18 +38,18 @@ you ▸ set up the funnel on my launch post — keyword "GUIDE"
 you ▸ schedule the week from content-library/
 ```
 
-Everything Midas learns lives in `midas/` (gitignored): `BRAND.md` (voice, links, audience — every caption flows from it), `PROFILES.md` (account IDs), `midas.json` (config), `skills/` (playbooks), `knowledge/` (competitor research, tutorials index).
+Everything Social Agents learns lives in `social-agents/` (gitignored): `BRAND.md` (voice, links, audience — every caption flows from it), `PROFILES.md` (account IDs), `social-agents.json` (config), `skills/` (playbooks), `knowledge/` (competitor research, tutorials index).
 
 ## Dashboard
 
 ```bash
-npm run dashboard    # → http://localhost:4180  (override: MIDAS_DASHBOARD_PORT)
-midas dashboard        # same thing, from anywhere (after `npm link`)
+npm run dashboard    # → http://localhost:4180  (override: SOCIAL_AGENTS_DASHBOARD_PORT)
+social-agents dashboard   # same thing, from anywhere (after `npm link`)
 ```
 
 A local web dashboard for monitoring what your agent is *actually doing* — and verifying it's working. Zero external services: it reads this repo's files, the agent's structured activity log (`logs/activity.jsonl`, one JSON line per action the agent takes), and the CreatorOS API with your already-configured credentials. Missing credentials never crash it — you get a friendly connect state instead.
 
-**Pages:** Overview (health strip, reply/DM/post counters, a GitHub-style year heatmap of agent activity, live feed) · Agent (full transparency into the agent's understanding: persona, objective, KPIs, what the account sells, comment/DM rules, and the literal system prompt it runs on) · Automations (every agentic workflow drawn n8n-style as trigger → action → outcome node chains — cloud funnels straight from the CreatorOS API with their real execution logs, local/Railway crons and auto-replies from the agent's log — each with an operating/armed/failing health badge and a live merged executions feed) · Brand (`midas/BRAND.md` rendered, edit-in-place) · Training (every workflow playbook with last-used-by-the-agent info, edit-in-place) · Logs (full filterable feed with raw JSON + real error payloads) · Chat (the same Midas as the terminal, streaming in the browser). Dark and light themes, persisted.
+**Pages:** Overview (health strip, reply/DM/post counters, a GitHub-style year heatmap of agent activity, live feed) · Agent (full transparency into the agent's understanding: persona, objective, KPIs, what the account sells, comment/DM rules, and the literal system prompt it runs on) · Automations (every agentic workflow drawn n8n-style as trigger → action → outcome node chains — cloud funnels straight from the CreatorOS API with their real execution logs, local/Railway crons and auto-replies from the agent's log — each with an operating/armed/failing health badge and a live merged executions feed) · Brand (`social-agents/BRAND.md` rendered, edit-in-place) · Training (every workflow playbook with last-used-by-the-agent info, edit-in-place) · Logs (full filterable feed with raw JSON + real error payloads) · Chat (the same Social Agents as the terminal, streaming in the browser). Dark and light themes, persisted.
 
 ### The API under it
 
@@ -102,9 +102,9 @@ That's the whole integration — the shell gives you the sidebar entry, routing,
 
 ## Capability surface
 
-Midas talks to CreatorOS through a typed client with an **endpoint allowlist enforced in code** — not prompt discipline. Anything outside this table returns "that endpoint isn't part of CreatorOS."
+Social Agents talks to CreatorOS through a typed client with an **endpoint allowlist enforced in code** — not prompt discipline. Anything outside this table returns "that endpoint isn't part of CreatorOS."
 
-| Capability | What Midas can do |
+| Capability | What Social Agents can do |
 |---|---|
 | **Posting** | Shortform video (TikTok/Reels/Shorts in one call), longform YouTube (title/description/tags), carousels, text posts, native multi-part threads (X/Threads/Bluesky), multiposting across account IDs, scheduling (ISO 8601 + timezone — CreatorOS servers publish), drafts, retry, pre-publish validation, post-publish verification |
 | **Media** | Upload once (up to 5 GB), reuse the URL across every platform |
@@ -119,10 +119,10 @@ Midas talks to CreatorOS through a typed client with an **endpoint allowlist enf
 
 ## Automations — the whole point
 
-During onboarding you pick a pathway (stored as `automationTarget` in `midas/midas.json`):
+During onboarding you pick a pathway (stored as `automationTarget` in `social-agents/social-agents.json`):
 
 - **Local (macOS)** — crons run as launchd agent services on your machine. Free, private, but the machine must be awake at scheduled times.
-- **VPS (Railway)** — always-on cloud. The service needs `CREATOROS_API_KEY` and `ANTHROPIC_API_KEY` set, and — this matters — **set a spend limit in the Anthropic Console (console.anthropic.com → Billing → Limits) *before* deploying.** The service runs an agent unattended; an uncapped key is an uncapped bill. Midas will repeat this warning every time a deploy comes up. That's on purpose.
+- **VPS (Railway)** — always-on cloud. The service needs `CREATOROS_API_KEY` and `ANTHROPIC_API_KEY` set, and — this matters — **set a spend limit in the Anthropic Console (console.anthropic.com → Billing → Limits) *before* deploying.** The service runs an agent unattended; an uncapped key is an uncapped bill. Social Agents will repeat this warning every time a deploy comes up. That's on purpose.
 
 Starter crons (onboarding sets up **zero** automations by design — your agent offers these in chat, one per pillar, and configures only what you approve):
 
@@ -137,11 +137,11 @@ Note: plain scheduled *posts* need no cron at all — scheduled publishing happe
 
 ### Agent Posts
 
-The `agent-posts` skill is the drop-a-video pipeline, and it runs entirely through the agent's CreatorOS tools — no database, no hosted service. Hand Midas a finished vertical video and it transcribes it locally (whisper), pulls the spoken "comment X" keyword, writes on-brand captions for every platform from `BRAND.md`, builds a 9:16 cover (a real frame by default, a generated scene if you opt into fal with your own identity photos), uploads once, and schedules one post to every connected social. Cadence is your CreatorOS queue: the agent posts in queue mode and never computes slots itself, so posting frequency is whatever you set in the app, and your post history page is the schedule. With your sign-off it arms the comment-to-DM funnel on Instagram and Facebook. `node midas/skills/agent-posts/scripts/check-setup.mjs` verifies the key, the connected socials, ffmpeg, and whisper.
+The `agent-posts` skill is the drop-a-video pipeline, and it runs entirely through the agent's CreatorOS tools — no database, no hosted service. Hand Social Agents a finished vertical video and it transcribes it locally (whisper), pulls the spoken "comment X" keyword, writes on-brand captions for every platform from `BRAND.md`, builds a 9:16 cover (a real frame by default, a generated scene if you opt into fal with your own identity photos), uploads once, and schedules one post to every connected social. Cadence is your CreatorOS queue: the agent posts in queue mode and never computes slots itself, so posting frequency is whatever you set in the app, and your post history page is the schedule. With your sign-off it arms the comment-to-DM funnel on Instagram and Facebook. `node social-agents/skills/agent-posts/scripts/check-setup.mjs` verifies the key, the connected socials, ffmpeg, and whisper.
 
-## Teaching Midas new patterns
+## Teaching Social Agents new patterns
 
-`midas/knowledge/TUTORIALS.md` is an index of KevBuildsApps YouTube tutorials. Before building an automation pattern Midas hasn't built before, it checks the index, fetches the tutorial, and follows the taught pattern. **Adding a tutorial is a one-line edit:**
+`social-agents/knowledge/TUTORIALS.md` is an index of KevBuildsApps YouTube tutorials. Before building an automation pattern Social Agents hasn't built before, it checks the index, fetches the tutorial, and follows the taught pattern. **Adding a tutorial is a one-line edit:**
 
 ```md
 - [Title](https://youtube.com/watch?v=...) — what it teaches
@@ -155,8 +155,8 @@ npm test          # vitest: routing, allowlist, hard blocks, platform matrix,
 npm run typecheck
 ```
 
-Layout: `src/` (harness, client, agent, tools), `templates/` (skill playbooks installed into `midas/skills/` at onboarding), `tests/`.
+Layout: `src/` (harness, client, agent, tools), `templates/` (skill playbooks installed into `social-agents/skills/` at onboarding), `tests/`.
 
-Security notes: your API key is never written into any repo file (it lives in `~/.midas/credentials.json`, mode 0600, or the `CREATOROS_API_KEY` env var) and appears in logs only as `sk_...last4`.
+Security notes: your API key is never written into any repo file (it lives in `~/.social-agents/credentials.json`, mode 0600, or the `CREATOROS_API_KEY` env var) and appears in logs only as `sk_...last4`.
 
 MIT. PRs welcome.

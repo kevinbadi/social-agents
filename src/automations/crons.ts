@@ -1,15 +1,15 @@
 /**
- * The whole point: all four pillars running on cron jobs. Midas delegates
+ * The whole point: all four pillars running on cron jobs. Social Agents delegates
  * the mechanics (launchd plists on macOS, Docker scaffolds for Railway) to
  * `creatoros automations:create` — it already handles both pathways.
- * Midas's layer: pick the crons, prepare the pipeline so scheduled runs
+ * Social Agents' layer: pick the crons, prepare the pipeline so scheduled runs
  * succeed with zero judgment gaps, create, verify, explain.
  */
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import type { AutomationTarget } from '../config/midasConfig.js';
+import type { AutomationTarget } from '../config/socialAgentsConfig.js';
 
 export interface StarterCron {
   name: string;
@@ -73,7 +73,7 @@ export function automationCreateArgs(cron: StarterCron, target: AutomationTarget
 
 /**
  * The creatoros CLI looks for skills at `<cwd>/creatoros/skills/<skill>/SKILL.md`.
- * Midas's skills live in `midas/skills/` — write a shim that points the
+ * Social Agents' skills live in `social-agents/skills/` — write a shim that points the
  * scheduled agent run at the real playbook.
  */
 export async function ensureCliSkillShim(workspaceRoot: string, skill: string): Promise<string> {
@@ -83,7 +83,7 @@ export async function ensureCliSkillShim(workspaceRoot: string, skill: string): 
     await mkdir(shimDir, { recursive: true });
     await writeFile(
       shimPath,
-      `# ${skill}\n\nRead \`midas/skills/${skill}/SKILL.md\` in this workspace and execute today's run by its playbook. Read \`midas/BRAND.md\`, \`midas/PROFILES.md\`, and \`midas/midas.json\` first — never contradict them.\n`,
+      `# ${skill}\n\nRead \`social-agents/skills/${skill}/SKILL.md\` in this workspace and execute today's run by its playbook. Read \`social-agents/BRAND.md\`, \`social-agents/PROFILES.md\`, and \`social-agents/social-agents.json\` first — never contradict them.\n`,
       'utf8',
     );
   }
@@ -114,7 +114,7 @@ export function runCreatorosCli(args: string[], cwd: string): Promise<CommandRes
 
 /**
  * Create one automation on the chosen pathway. Railway = one always-on
- * worker reading midas/automations.json (no per-cron service, no CLI);
+ * worker reading social-agents/automations.json (no per-cron service, no CLI);
  * local = launchd via the creatoros CLI, shim included.
  */
 export async function createAutomation(
@@ -135,7 +135,7 @@ export async function createAutomation(
       });
       return {
         code: 0,
-        stdout: `${cron.name} saved to midas/automations.json. A worker running against this workspace picks it up within 30 seconds; a DEPLOYED Railway worker needs a sync — run \`railway up --detach\` (or ask me to) so the change ships.`,
+        stdout: `${cron.name} saved to social-agents/automations.json. A worker running against this workspace picks it up within 30 seconds; a DEPLOYED Railway worker needs a sync — run \`railway up --detach\` (or ask me to) so the change ships.`,
         stderr: '',
       };
     } catch (error) {

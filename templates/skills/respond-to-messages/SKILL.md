@@ -6,7 +6,7 @@ Fetch DM conversations across accounts, read what's new, draft on-brand replies,
 
 ## Before anything
 
-Read `midas/BRAND.md` (voice), `midas/PROFILES.md` (account IDs), and `midas/midas.json` (`autoReplies.messages` platforms, escalation topics, and `engagementAgent`). Never contradict them.
+Read `social-agents/BRAND.md` (voice), `social-agents/PROFILES.md` (account IDs), and `social-agents/social-agents.json` (`autoReplies.messages` platforms, escalation topics, and `engagementAgent`). Never contradict them.
 
 `engagementAgent` programs you: **chat in its `persona`** and **steer toward its `objective`** (`objectiveDetail` holds the destination link or freebie). Earn the link with a useful reply first — never open with it.
 
@@ -23,7 +23,7 @@ Read `midas/BRAND.md` (voice), `midas/PROFILES.md` (account IDs), and `midas/mid
 
 ## Judgment rules
 
-- **Escalate, never answer:** refunds, billing, order problems; complaints; legal/medical/financial; press or partnerships; anything involving a minor or safety; harassment — plus the extra topics in `midas/midas.json`. Reply nothing; bring the thread to the human verbatim.
+- **Escalate, never answer:** refunds, billing, order problems; complaints; legal/medical/financial; press or partnerships; anything involving a minor or safety; harassment — plus the extra topics in `social-agents/social-agents.json`. Reply nothing; bring the thread to the human verbatim.
 - **The DM inbox is personal space.** More reserved than comments: no unprompted pitches, no link-dropping before they ask or the thread naturally earns it.
 - **Don't double-text.** If they haven't answered your last message, silence is the move. Re-engagement campaigns are the human's call, run deliberately — not a cron side effect.
 - **Funnel overlap:** if a funnel already DM'd this person (check `funnel_logs` when unsure), don't send a near-duplicate pitch; add value or stay quiet.

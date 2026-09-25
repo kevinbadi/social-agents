@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// The `midas` command — open a Midas session from any terminal, anywhere.
-// Register it once with `npm link` (from this repo), then just type `midas`.
+// The `social-agents` command — open a Social Agents session from any terminal, anywhere.
+// Register it once with `npm link` (from this repo), then just type `social-agents`.
 //
 // Sessions do NOT merge: each terminal is its own conversation with its
-// own memory. What every session DOES share is the workspace — midas/
+// own memory. What every session DOES share is the workspace — social-agents/
 // brand pack, config, credentials, content-library/ — because the command
 // always anchors to this install's directory, not the shell's cwd.
 import { spawnSync } from 'node:child_process';
@@ -19,8 +19,8 @@ const deps = spawnSync(process.execPath, [join(root, 'scripts', 'ensure-deps.mjs
 });
 if (deps.status !== 0) process.exit(deps.status ?? 1);
 
-// `midas` → the chat; `midas dashboard` → mission control in the browser.
-const sub = (process.argv[2] ?? 'midas').toLowerCase();
+// `social-agents` → the chat; `social-agents dashboard` → mission control in the browser.
+const sub = (process.argv[2] ?? 'social-agents').toLowerCase();
 const tsx = join(root, 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx');
 const run = spawnSync(tsx, [join(root, 'src', 'index.ts'), 'creatoros', sub], {
   cwd: root,

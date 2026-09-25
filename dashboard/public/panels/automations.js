@@ -19,14 +19,14 @@ export default {
 
     if (!data.connected) {
       const hint = note('automations-connect',
-        'Cloud flows come from your CreatorOS account; connect one (npm start creatoros midas) to see live funnel state and execution logs. Local flows render from this repo either way.');
+        'Cloud flows come from your CreatorOS account; connect one (npm start creatoros social-agents) to see live funnel state and execution logs. Local flows render from this repo either way.');
       if (hint) root.append(hint);
     } else if (!data.cloudScoped) {
       // Connected key, but no onboarded profile — cloud automations are
       // deliberately NOT shown: the key sees the whole account, and this
       // workspace only owns one profile.
       root.append(h('div', { class: 'note' },
-        'Cloud automations are hidden until onboarding links this workspace to a profile. Your API key can see every profile on the account — the dashboard only ever shows the one this workspace manages. Run npm start creatoros midas to finish setup.'));
+        'Cloud automations are hidden until onboarding links this workspace to a profile. Your API key can see every profile on the account — the dashboard only ever shows the one this workspace manages. Run npm start creatoros social-agents to finish setup.'));
     }
 
     const healthBadge = (flow) => {
@@ -63,7 +63,7 @@ export default {
         h('div', { class: 'flow-stats num' },
           s.lastTs
             ? `last run ${timeAgo(s.lastTs)} (${s.lastOutcome}) · ${s.sent} sent · ${s.skipped} skipped · ${s.failed} failed`
-            : flow.enabled ? 'no executions recorded yet' : 'turned off — ask Midas in chat to arm it'),
+            : flow.enabled ? 'no executions recorded yet' : 'turned off — ask Social Agents in chat to arm it'),
         flow.detail
           ? h('details', { style: 'margin-top:8px' },
               h('summary', { style: 'cursor:pointer;color:var(--text-4);font-size:12.5px' }, 'configuration'),
@@ -112,7 +112,7 @@ export default {
           ? h('div', {}, flows.map(flowCard))
           : h('div', { class: 'card-solid' },
               h('p', { style: 'color:var(--text-3)' },
-                'No automations exist yet. Ask Midas in the chat — "set up auto-replies" or "run a funnel on my latest post" — and the flows appear here as they go live.')),
+                'No automations exist yet. Ask Social Agents in the chat — "set up auto-replies" or "run a funnel on my latest post" — and the flows appear here as they go live.')),
       );
     };
     renderFlows(data.flows);

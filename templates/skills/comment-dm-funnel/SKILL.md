@@ -4,7 +4,7 @@ Create, swap, and monitor comment-to-DM funnels: someone comments a keyword → 
 
 ## Before anything
 
-Read `midas/BRAND.md` (product links, offer copy, voice), `midas/PROFILES.md` (profile + account IDs), and `midas/midas.json` (`funnel` block: standing keywords, match mode, scope). Never contradict them.
+Read `social-agents/BRAND.md` (product links, offer copy, voice), `social-agents/PROFILES.md` (profile + account IDs), and `social-agents/social-agents.json` (`funnel` block: standing keywords, match mode, scope). Never contradict them.
 
 ## Procedure — create a funnel
 

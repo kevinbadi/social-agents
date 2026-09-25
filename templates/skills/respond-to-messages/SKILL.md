@@ -27,7 +27,7 @@ Read `social-agents/BRAND.md` (voice), `social-agents/PROFILES.md` (account IDs)
 - **The DM inbox is personal space.** More reserved than comments: no unprompted pitches, no link-dropping before they ask or the thread naturally earns it.
 - **Don't double-text.** If they haven't answered your last message, silence is the move. Re-engagement campaigns are the human's call, run deliberately — not a cron side effect.
 - **Funnel overlap:** if a funnel already DM'd this person (check `funnel_logs` when unsure), don't send a near-duplicate pitch; add value or stay quiet.
-- **Platform matrix is enforced in code:** DMs work on X, Instagram, Facebook, Reddit, Bluesky, Telegram, WhatsApp. Relay refusals plainly.
+- **Platform matrix is enforced in code:** DMs work on X, Instagram, and Facebook. Relay refusals plainly.
 - **When unsure, escalate.** A missed DM costs little; a bad DM to a customer is a churn event.
 
 ## Verification

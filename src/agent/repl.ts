@@ -16,6 +16,7 @@ import { buildSystemPrompt } from './systemPrompt.js';
 import { buildToolServer } from './tools.js';
 import { sanitize } from '../util/sanitize.js';
 import { mdToAnsi } from '../ui/markdown.js';
+import { renderWordRows } from '../ui/banner.js';
 
 const RESET = '\x1b[0m';
 const DIM = '\x1b[2m';
@@ -28,14 +29,8 @@ const SILVER = '\x1b[38;2;203;213;225m';
 // outline → filled → outline, in the brand cyan.
 const FRAMES = ['▹', '▸', '▶', '▸'];
 
-const BANNER = `
-  ██╗  ██╗ █████╗ ██╗██████╗  ██████╗ ███████╗
-  ██║ ██╔╝██╔══██╗██║██╔══██╗██╔═══██╗██╔════╝
-  █████╔╝ ███████║██║██████╔╝██║   ██║███████╗
-  ██╔═██╗ ██╔══██║██║██╔══██╗██║   ██║╚════██║
-  ██║  ██╗██║  ██║██║██║  ██║╚██████╔╝███████║
-  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
-`;
+// Stacked so it fits an 80-column terminal.
+const BANNER = `\n${['SOCIAL', 'AGENTS'].map((word) => renderWordRows(word).map((row) => `  ${row}`).join('\n')).join('\n')}\n`;
 
 /**
  * Keep the chat floating a few rows off the terminal floor — content glued
@@ -141,7 +136,7 @@ export class HatchSpinner implements TurnSpinner {
   private static readonly STAGES = [
     { after: 0, shell: ['(', ')'], label: 'incubating your CreatorOS super-agent' },
     { after: 6, shell: ['{', '}'], label: 'the shell is cracking' },
-    { after: 12, shell: ['⟩', '⟨'], label: 'almost there — your agent is hatching' },
+    { after: 12, shell: ['⟩', '⟨'], label: 'almost there — your agents are hatching' },
   ] as const;
 
   start(label: string): void {
@@ -187,7 +182,7 @@ export class HatchSpinner implements TurnSpinner {
       clearInterval(this.timer);
       this.timer = null;
       process.stdout.write(
-        `\r\x1b[2K${CYAN}✧ ▶ ✧${RESET}  ${BOLD}hatched${RESET} ${DIM}— your CreatorOS agent is born.${RESET}\n\n\x1b[?25h`,
+        `\r\x1b[2K${CYAN}✧ ▶ ✧${RESET}  ${BOLD}hatched${RESET} ${DIM}— your CreatorOS agents are born.${RESET}\n\n\x1b[?25h`,
       );
     }
   }
@@ -437,7 +432,7 @@ export async function runRepl(
 
   console.log(BANNER);
   printWelcomeCard([
-    `${AMBER}✻${RESET} ${SILVER}Social Agents — the CreatorOS agent${RESET}`,
+    `${AMBER}✻${RESET} ${SILVER}Social Agents: your CreatorOS agents${RESET}`,
     '',
     `${DIM}key${RESET}      ${client.maskedKey}`,
     `${DIM}pathway${RESET}  ${config?.automationTarget ?? 'local'} · ${config?.timezone ?? 'UTC'}`,

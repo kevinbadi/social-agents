@@ -3,8 +3,7 @@ import { buildFunnelAutomation, describeFunnel } from '../src/automations/funnel
 
 const base = {
   platform: 'instagram',
-  profileId: 'prof1',
-  accountId: 'acc1',
+  accountId: 'acc_9f2kd81lq0',
   name: 'launch-funnel',
   keywords: ['LINK', 'GUIDE'],
   dmMessage: 'Here it is — thanks for the comment!',
@@ -12,49 +11,40 @@ const base = {
 };
 
 describe('funnel config generation', () => {
-  it('builds a valid comment-automation body from the interview answers', () => {
+  it('builds a valid automation body from the interview answers', () => {
     const body = buildFunnelAutomation(base);
-    expect(body).toMatchObject({
-      profileId: 'prof1',
-      accountId: 'acc1',
+    expect(body).toEqual({
+      accountId: 'acc_9f2kd81lq0',
       name: 'launch-funnel',
-      trigger: 'comment',
       keywords: ['LINK', 'GUIDE'],
       matchMode: 'contains',
-      dmMessage: base.dmMessage,
-      linkTracking: true,
+      dmMessage: `${base.dmMessage}\n\nhttps://shop.example/guide`,
     });
-    expect(body.buttons).toEqual([
-      { type: 'url', title: 'Get the link', url: 'https://shop.example/guide' },
-    ]);
-    // Account-wide: no post scoping fields.
-    expect(body.platformPostId).toBeUndefined();
+    // Account-wide, and no profile concept: a key is pinned to one workspace.
+    expect(body).not.toHaveProperty('platformPostId');
+    expect(body).not.toHaveProperty('profileId');
   });
 
-  it('scopes to a single post when platformPostId + postId are given', () => {
-    const body = buildFunnelAutomation({ ...base, platformPostId: 'ig_123', postId: 'post_abc' });
-    expect(body.platformPostId).toBe('ig_123');
-    expect(body.postId).toBe('post_abc');
+  it('does not repeat a link the DM already contains', () => {
+    const body = buildFunnelAutomation({ ...base, dmMessage: 'Grab it: https://shop.example/guide' });
+    expect(body.dmMessage).toBe('Grab it: https://shop.example/guide');
   });
 
-  it('requires postId alongside platformPostId', () => {
-    expect(() => buildFunnelAutomation({ ...base, platformPostId: 'ig_123' })).toThrow(/postId/);
+  it('scopes to a single post by the network post id', () => {
+    const body = buildFunnelAutomation({ ...base, platformPostId: '17912345678901234' });
+    expect(body.platformPostId).toBe('17912345678901234');
+  });
+
+  it('carries matchMode and the optional public comment reply', () => {
+    const body = buildFunnelAutomation({ ...base, matchMode: 'word', commentReply: 'Check your DMs!' });
+    expect(body.matchMode).toBe('word');
+    expect(body.commentReply).toBe('Check your DMs!');
   });
 
   it('rejects non-IG/FB platforms', () => {
     expect(() => buildFunnelAutomation({ ...base, platform: 'twitter' })).toThrow(
       /Instagram and Facebook only/,
     );
-  });
-
-  it('enforces the 640-char DM limit when a link button is attached', () => {
-    expect(() => buildFunnelAutomation({ ...base, dmMessage: 'x'.repeat(641) })).toThrow(/640/);
-    expect(() => buildFunnelAutomation({ ...base, dmMessage: 'x'.repeat(640) })).not.toThrow();
-  });
-
-  it('truncates button titles to 20 chars', () => {
-    const body = buildFunnelAutomation({ ...base, linkTitle: 'This title is way too long for a button' });
-    expect(body.buttons?.[0]?.title.length).toBeLessThanOrEqual(20);
   });
 
   it('rejects an empty DM message and blank keywords', () => {

@@ -24,8 +24,8 @@ Write `social-agents/BRAND.md` in exactly this shape, then read it back and ask 
 ```md
 # Brand Pack
 
-Social Agents reads this before writing anything. Every caption, description, and
-CTA flows from here. Edit freely — Social Agents always uses the latest version.
+Social Agents read this before writing anything. Every caption, description, and
+CTA flows from here. Edit freely — Social Agents always use the latest version.
 
 ## What this brand is about
 

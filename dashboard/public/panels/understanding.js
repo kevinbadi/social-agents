@@ -48,7 +48,7 @@ export default {
     const voice = data.brand?.voice;
     root.append(
       h('div', { class: 'grid grid-2', style: 'margin-bottom:16px' },
-        card('Who the agent is — persona',
+        card('Who your agents are — persona',
           identity
             ? h('div', {},
                 quote(identity.persona),
@@ -107,7 +107,7 @@ export default {
     /* ---- KPIs the agent is judged on ---- */
     root.append(
       h('div', { class: 'card-solid', style: 'margin-bottom:16px' },
-        h('div', { class: 'card-title' }, 'KPIs the agent is watching'),
+        h('div', { class: 'card-title' }, 'KPIs your agents are watching'),
         h('div', { class: 'grid grid-stats' },
           data.kpis.map((k) => h('div', {},
             h('div', { style: 'display:flex;align-items:center;gap:8px' },

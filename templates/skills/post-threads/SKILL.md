@@ -1,19 +1,19 @@
 # post-threads
 
-Publish multi-part text threads to X, Threads, and Bluesky — split long-form ideas into a hook-first sequence. Single text posts to these platforms also fit here.
+Publish multi-part text threads to X and Threads: split long-form ideas into a hook-first sequence. Single text posts to these platforms also fit here.
 
 ## Platform mechanics (native threads — no sequential posting)
 
-CreatorOS supports threads natively on Twitter/X, Threads, and Bluesky: put the parts in `platformSpecificData.threadItems` (array of `{content, mediaItems?}`) on that platform's entry in `create_post`. The first item is the root; each subsequent item replies to the previous. **When `threadItems` is set, top-level `content` is NOT published — the whole thread lives in the items.** One post ID covers the full chain, cross-platform in one call.
+CreatorOS supports threads natively on Twitter/X and Threads: use the advanced form and put the parts in `options.threadItems` (array of `{content, mediaItems?}`) on that network's target in `create_post`. The first item is the root; each subsequent item replies to the previous. **When `threadItems` is set, top-level `content` is NOT published — the whole thread lives in the items.** One post ID covers the full chain, cross-platform in one call.
 
-Limits: X 280 chars/part (free tier), Threads 500, Bluesky a hard 300 per item.
+Limits: X 280 chars/part (free tier), Threads 500.
 
 ## Procedure
 
 1. Draft: hook in part 1 (it decides whether anyone reads on), one idea per part, a closer with the call-to-action from the brand pack. Number parts only if the brand does. Show the full thread text for approval before posting unless the human pre-approved autonomy.
 2. Validate lengths per platform with `validate_post_length`; split any over-limit part at a sentence boundary.
-3. One `create_post` with a platform entry per target account, each carrying `threadItems`. Same thread on X and Threads? Two entries, one call.
-4. Schedule with `scheduledFor` + timezone if asked; servers publish.
+3. One `create_post` with `targets`, one per account (`{ platform, account_id, options: { threadItems } }`). Same thread on X and Threads? Two targets, one call.
+4. Schedule with `schedule_at` + timezone if asked; servers publish. Without `schedule_at` or `draft: true` it goes live immediately.
 
 ## Judgment rules
 
@@ -24,4 +24,4 @@ Limits: X 280 chars/part (free tier), Threads 500, Bluesky a hard 300 per item.
 
 ## Verification
 
-`create_post` returns the post ID; `get_post` confirms per-platform published state. Report: platform(s), part count, post URL(s).
+`create_post` returns the post id; `get_post` confirms per-platform published state. Report: platform(s), part count, post URL(s).

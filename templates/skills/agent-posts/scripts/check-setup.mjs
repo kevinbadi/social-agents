@@ -7,9 +7,8 @@ import "./lib/creatoros-key.js";
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { creatorOsKeySource } from "./lib/creatoros-key.js";
+import { CREATOROS_API_URL, GET_KEY_HELP, creatorOsKeySource, creatorOsLegacyKey } from "./lib/creatoros-key.js";
 
-const BASE = process.env.ZERNIO_BASE_URL || "https://zernio.com/api/v1";
 const IDENTITY_DIR = path.resolve(process.env.AGENT_POSTS_IDENTITY_DIR || "social-agents/assets/identity");
 
 const ONBOARD = `
@@ -19,7 +18,8 @@ const ONBOARD = `
   onboarding asks for.
 
     1. Go to https://www.creatoros.ca/ and sign in (sign up first if you are new).
-    2. Open Settings -> API key and copy it.
+    2. Open Settings, API keys and copy it (it starts with cos_live_).
+       Or run: npx @creatoros/cli init
     3. Run Social Agents onboarding (npm start creatoros social-agents) and paste it there, or
        export CREATOROS_API_KEY=<your key> in your shell.
        Never paste the key into a repo file.
@@ -42,9 +42,9 @@ function has(bin) {
   }
 }
 
-async function zget(p) {
-  const r = await fetch(`${BASE}${p}`, {
-    headers: { Authorization: `Bearer ${process.env.CREATOR_OS_API_KEY}` },
+async function get(p) {
+  const r = await fetch(`${CREATOROS_API_URL}/v1${p}`, {
+    headers: { Authorization: `Bearer ${process.env.CREATOROS_API_KEY}` },
   });
   const body = await r.json().catch(() => ({}));
   return { status: r.status, body };
@@ -58,30 +58,29 @@ const fail = (msg) => {
 const ok = (msg) => console.log(`  ✔ ${msg}`);
 const note = (msg) => console.log(`  · ${msg}`);
 
-if (!process.env.CREATOR_OS_API_KEY) {
+if (creatorOsLegacyKey) {
+  console.log(`\n  The saved key (sk_...) is from before CreatorOS had its own API and no longer works.\n  ${GET_KEY_HELP}\n`);
+  process.exit(1);
+}
+if (!creatorOsKeySource) {
   console.log(ONBOARD);
   process.exit(1);
 }
 ok(`CreatorOS key found via ${creatorOsKeySource}`);
 
-const prof = await zget("/profiles");
-if (prof.status === 401 || prof.status === 403) {
-  fail("the CreatorOS API key was rejected. Copy it again from https://www.creatoros.ca/ (Settings -> API key).");
-} else if (prof.status >= 400) {
-  fail(`could not reach CreatorOS (HTTP ${prof.status}). Try again in a minute.`);
+const me = await get("/me");
+if (me.status === 401 || me.status === 403) {
+  fail(`the CreatorOS API key was rejected. ${GET_KEY_HELP}`);
+} else if (me.status >= 400) {
+  fail(`could not reach CreatorOS (HTTP ${me.status}: ${me.body?.error?.message ?? "no details"}). Try again in a minute.`);
 } else {
-  const profiles = prof.body.profiles ?? [];
-  let connected = 0;
-  for (const p of profiles) {
-    const acc = await zget(`/accounts?profileId=${encodeURIComponent(p._id)}`);
-    const accounts = (acc.body.accounts ?? []).filter((a) => a.isActive !== false);
-    connected += accounts.length;
-    const handles = accounts.map((a) => `${a.platform}:@${(a.username ?? "").replace(/^@/, "")}`);
-    note(`profile ${p.name ?? p._id} -> ${accounts.length} connected${handles.length ? ` (${handles.join(", ")})` : ""}`);
-  }
-  if (!profiles.length) fail("key is valid but has no profile yet. Finish onboarding at https://www.creatoros.ca/, then rerun.");
-  else if (!connected) fail("key works but no socials are connected. Connect TikTok / Instagram / YouTube / X at https://www.creatoros.ca/, then rerun.");
-  else ok(`${connected} social account(s) connected`);
+  // A key is pinned to one workspace: its connected socials are the whole picture.
+  note(`workspace ${me.body.workspace?.name ?? me.body.workspace?.id ?? "(unnamed)"}`);
+  const acc = await get("/accounts");
+  const accounts = (acc.body.accounts ?? []).filter((a) => a.isActive !== false);
+  const handles = accounts.map((a) => `${a.platform}:@${(a.username ?? "").replace(/^@/, "")}`);
+  if (!accounts.length) fail("key works but no socials are connected. Connect TikTok / Instagram / YouTube / X at https://www.creatoros.ca/, then rerun.");
+  else ok(`${accounts.length} social account(s) connected (${handles.join(", ")})`);
 }
 
 // Local tooling. ffmpeg is required for the cover; whisper is the free local

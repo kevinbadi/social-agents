@@ -1,6 +1,6 @@
 /**
- * Pure renderers for the files Social Agents reads forever after. Everything
- * Social Agents writes later — captions, descriptions, CTAs — flows from BRAND.md.
+ * Pure renderers for the files Social Agents read forever after. Everything
+ * Social Agents write later — captions, descriptions, CTAs — flows from BRAND.md.
  */
 import type { BrandAnswers, InterviewState, ProductOffer } from './state.js';
 import type { SocialAccount } from '../client/types.js';
@@ -42,8 +42,8 @@ export function renderBrandMd(brand: BrandAnswers): string {
 
   return `# Brand Pack
 
-Social Agents reads this before writing anything. Every caption, description, and
-CTA flows from here. Edit freely — Social Agents always uses the latest version.
+Social Agents read this before writing anything. Every caption, description, and
+CTA flows from here. Edit freely — Social Agents always use the latest version.
 
 ## What this brand is about
 
@@ -73,15 +73,18 @@ Research findings live in \`knowledge/COMPETITORS.md\` — ask Social Agents to 
 }
 
 export function renderProfilesMd(
-  accounts: Array<Pick<SocialAccount, '_id' | 'platform' | 'username'> & { username?: string }>,
+  accounts: Array<Pick<SocialAccount, 'id' | 'platform' | 'username'> & { username?: string }>,
 ): string {
   const rows = accounts
-    .map((a) => `| ${platformLabel(a.platform)} | @${a.username ?? 'unknown'} | \`${a._id}\` |`)
+    .map((a) => `| ${platformLabel(a.platform)} | @${a.username ?? 'unknown'} | \`${a.id}\` |`)
     .join('\n');
   return `# Profile Map
 
-Every post targets account IDs — these are the source of truth. If an
-account is reconnected and gets a new ID, update this file (or re-run setup).
+The connected accounts in this CreatorOS workspace, as of setup. Account
+IDs (acc_...) are opaque and CreatorOS can re-issue them, so treat the IDs
+below as a snapshot: at the start of any job that needs one, call
+list_accounts and use the ID it returns, exactly as returned. Posting by
+network name (\`platforms: ["instagram"]\`) needs no ID at all.
 
 | Platform | Username | Account ID |
 |---|---|---|
@@ -92,7 +95,7 @@ ${rows}
 export function renderTutorialsMd(): string {
   return `# Tutorials Index — KevBuildsApps
 
-Before building an automation pattern it hasn't built before, Social Agents checks
+Before building an automation pattern they haven't built before, Social Agents check
 this index, fetches the tutorial transcript, and follows the taught pattern.
 
 Adding a tutorial is a one-line edit: \`- [Title](URL) — what it teaches\`.
@@ -144,7 +147,7 @@ From this folder:
 npx -y @railway/cli login
 npx -y @railway/cli init --name social-agents-worker
 npx -y @railway/cli variables \\
-  --set "CREATOROS_API_KEY=<your CreatorOS API key — https://www.creatoros.ca/ → Settings → API key>" \\
+  --set "CREATOROS_API_KEY=<your cos_live_ key from https://www.creatoros.ca/, Settings, API keys>" \\
   --set "ANTHROPIC_API_KEY=<your Anthropic key — or set CLAUDE_CODE_OAUTH_TOKEN from claude setup-token instead>" \\
   --set "SOCIAL_AGENTS_WORKER_TOKEN=${opts.workerToken}" \\
   --set "TZ=${opts.timezone}" \\
@@ -190,13 +193,13 @@ them, sync the deployed worker with \`npx -y @railway/cli up --detach --no-gitig
 export function renderClaudeMd(state: InterviewState): string {
   const pathway = state.answers.pathway;
   const mode = state.answers.mode ?? 'creator';
-  return `# Social Agents — CreatorOS agent workspace
+  return `# Social Agents: CreatorOS agents workspace
 
 Generated at onboarding — the form's answers live in the files below, never in
 any one chat. Sessions are parallel-safe: open as many agent chats here as you
 like; files are the source of truth, so re-read before you write.
 
-You are Social Agents, the CreatorOS agent. You run this ${mode === 'agency' ? "agency's client brands" : "creator's brand"} on CreatorOS: posting at
+You are Social Agents, a team of CreatorOS agents. Speak as the team ("we", never "I"). You run this ${mode === 'agency' ? "agency's client brands" : "creator's brand"} on CreatorOS: posting at
 scale, automations, comment & DM replies, analytics.
 
 ## Read these first, every session

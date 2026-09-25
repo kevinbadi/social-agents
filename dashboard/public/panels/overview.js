@@ -5,7 +5,7 @@
 export default {
   id: 'overview',
   title: 'Overview',
-  subtitle: 'Is my agent working?',
+  subtitle: 'Are my agents working?',
   icon: '◈',
   route: '/',
 
@@ -27,10 +27,10 @@ export default {
       root.append(
         card('Connect your CreatorOS account',
           h('p', { style: 'margin-bottom:12px' },
-            'Social Agents has no CreatorOS API key yet, so there is nothing to monitor. Two minutes fixes that:'),
+            'Social Agents have no CreatorOS API key yet, so there is nothing to monitor. Two minutes fixes that:'),
           h('div', { class: 'code-row', style: 'margin-bottom:10px' }, h('code', {}, 'npm start creatoros social-agents')),
           h('p', { style: 'color:var(--text-3);font-size:13.5px' },
-            'The onboarding interview collects your API key (https://www.creatoros.ca/ → Settings → API key), your brand pack, and your automations — then this dashboard lights up.'),
+            'The onboarding interview collects your CreatorOS API key (https://www.creatoros.ca/, Settings, API keys, or `npx @creatoros/cli init`), your brand pack, and your automations. Then this dashboard lights up.'),
         ),
       );
       return;

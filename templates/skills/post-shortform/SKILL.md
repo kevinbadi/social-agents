@@ -1,6 +1,6 @@
 # post-shortform
 
-Publish a short vertical video (<90s, 9:16) + caption to TikTok / Instagram Reels / YouTube Shorts — upload once, one `create_post` across all shortform account IDs.
+Publish a short vertical video (<90s, 9:16) + caption to TikTok / Instagram Reels / YouTube Shorts: upload once, one `create_post` across every shortform network.
 
 ## Before anything
 
@@ -8,12 +8,12 @@ Read `social-agents/BRAND.md` and `social-agents/PROFILES.md`. Caption, hooks, a
 
 ## Procedure
 
-1. Validate before upload: the file exists on disk, it's a video format, vertical aspect expected for Reels/TikTok. `validate_media` on the uploaded URL catches per-platform size limits.
-2. Upload once with `upload_media` — the returned URL is reusable across platforms.
-3. Check the caption with `validate_post_length` against every target platform.
-4. TikTok prerequisites: `tiktok_creator_info` for the account's privacy levels; the post needs `platformSpecificData` with a valid `privacyLevel`, `allowComment`/`allowDuet`/`allowStitch`, and `contentPreviewConfirmed: true` + `expressConsentGiven: true` — TikTok posts FAIL without the consent flags.
-5. One `create_post` with a platform entry per shortform account (TikTok + Instagram + YouTube). Instagram auto-detects Reels from 9:16 ≤90s video; YouTube auto-detects Shorts (≤3 min + vertical, no flag exists). Give YouTube a `title`.
-6. Scheduling: pass `scheduledFor` + the timezone from `social-agents/social-agents.json`. CreatorOS servers publish — nothing local needs to stay running.
+1. Validate before upload: the file exists on disk, it's a video format, vertical aspect expected for Reels/TikTok. `validate_media` on the uploaded URL catches per-network size limits.
+2. Upload once with `upload_media`: the returned `med_` id is reusable across networks. Upload the cover image too if there is one.
+3. Check the caption with `validate_post_length` against every target network.
+4. TikTok: `tiktok_creator_info` shows the account's allowed privacy levels. In the simple form CreatorOS fills in TikTok's consent flags itself; to pick a privacy level or interaction settings, pass a top-level `tiktok: { privacy_level, allow_comment, allow_duet, allow_stitch }`.
+5. One `create_post` with `platforms: ["tiktok","instagram","youtube"]`, `media: [<med_ id>]`, `post_type: "short_video"`, a `title` for YouTube, and the cover as `cover: <med_ id>` (or `cover_timestamp_ms` to use a frame). CreatorOS makes it a Reel and a Short.
+6. Timing: `schedule_at` + the timezone from `social-agents/social-agents.json`. Omitting both `schedule_at` and `draft` publishes immediately. CreatorOS servers publish, so nothing local needs to stay running.
 
 ## Judgment rules
 
@@ -27,4 +27,4 @@ Read `social-agents/BRAND.md` and `social-agents/PROFILES.md`. Caption, hooks, a
 
 ## Verification
 
-`create_post` returns a post ID; confirm per-platform status via `get_post`. A failed platform → `retry_post` once, then report honestly.
+`create_post` returns a post id; confirm per-network status via `get_post`. A failed platform → `retry_post` once, then report honestly.

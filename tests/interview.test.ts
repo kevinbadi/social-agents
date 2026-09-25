@@ -41,7 +41,7 @@ describe('interview persistence & resume', () => {
     const { readFile } = await import('node:fs/promises');
     const raw = await readFile(path, 'utf8');
     expect(raw).toContain('Acme Fitness');
-    expect(raw).not.toMatch(/sk_[0-9a-f]/i);
+    expect(raw).not.toMatch(/cos_live_[A-Za-z0-9_-]{32}|sk_[0-9a-f]/i);
     const resumed = await loadState(path);
     expect(resumed.answers.mode).toBe('agency');
     expect(nextStep(resumed)).toBe('key');
@@ -116,7 +116,7 @@ describe('brand pack rendering', () => {
     competitors: ['@rivalbrand', '@otherbrand'],
   };
 
-  it('everything Social Agents writes later flows from BRAND.md', () => {
+  it('everything Social Agents write later flows from BRAND.md', () => {
     const md = renderBrandMd(brand);
     expect(md).toContain('bold, scarce, playful');
     expect(md).toContain('Never: thirsty');
@@ -234,7 +234,7 @@ describe('brand pack rendering', () => {
     expect(md).toContain('railway · timezone America/Toronto');
     expect(md).toMatch(/parallel-safe/i);
     expect(md).toMatch(/never print them/i);
-    expect(md).not.toMatch(/sk_[0-9a-f]/i); // never a key in a committed-adjacent file
+    expect(md).not.toMatch(/cos_live_[A-Za-z0-9_-]{32}|sk_[0-9a-f]/i); // never a key in a committed-adjacent file
   });
 
   it('describes a live worker in one human line', () => {
@@ -259,15 +259,17 @@ describe('brand pack rendering', () => {
     expect(guide).toContain('America/Toronto');
     expect(guide).toContain('SOCIAL_AGENTS_WORKER_TOKEN');
     expect(guide).toContain('spend limit');
-    expect(guide).not.toMatch(/sk_[0-9a-f]/i); // never a real key in a file
+    expect(guide).not.toMatch(/cos_live_[A-Za-z0-9_-]{32}|sk_[0-9a-f]/i); // never a real key in a file
   });
 
   it('renders the profile map with account IDs', () => {
     const md = renderProfilesMd([
-      { _id: 'acc1', platform: 'tiktok', username: 'brand.tt' },
-      { _id: 'acc2', platform: 'instagram', username: 'brand.ig' },
+      { id: 'acc_Tt-9x_1', platform: 'tiktok', username: 'brand.tt' },
+      { id: 'acc_Ig-4k_2', platform: 'instagram', username: 'brand.ig' },
     ]);
-    expect(md).toContain('| TikTok | @brand.tt | `acc1` |');
-    expect(md).toContain('| Instagram | @brand.ig | `acc2` |');
+    // Opaque ids are copied exactly, never shortened.
+    expect(md).toContain('| TikTok | @brand.tt | `acc_Tt-9x_1` |');
+    expect(md).toContain('| Instagram | @brand.ig | `acc_Ig-4k_2` |');
+    expect(md).toMatch(/opaque/);
   });
 });

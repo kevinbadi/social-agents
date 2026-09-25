@@ -12,7 +12,7 @@ import { existsSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CreatorOSClient, isValidKeyShape } from '../client/client.js';
+import { CreatorOSClient, isLegacyKey, isValidKeyShape, LegacyApiKeyError } from '../client/client.js';
 import { platformLabel } from '../client/platformMatrix.js';
 import type { SocialAccount } from '../client/types.js';
 import { maskKey } from '../util/mask.js';
@@ -47,14 +47,15 @@ export async function runInterview(root: string = process.cwd()): Promise<Interv
 
   say(
     resuming
-      ? `Social Agents here — picking up where we left off. ${state.completed.length} step(s) already done.`
-      : `Hey — I'm Social Agents, your marketing agent. Two quick things and you're in: creator or agency, and your CreatorOS API key. Everything else we figure out together in chat.
+      ? `Social Agents here, picking up where we left off. ${state.completed.length} step(s) already done.`
+      : `Hey, we're Social Agents, your marketing team of AI agents. Two quick things and you're in: creator or agency, and your CreatorOS API key. Everything else we figure out together in chat.
 
-What CreatorOS is: the service I run on. It holds your connected socials and does the actual posting, replying, and analytics — I'm the agent that drives it. You need one thing from it, an API key:
+What CreatorOS is: the service we run on. It holds your connected socials and does the actual posting, replying, and analytics. We're the agents that drive it. You need one thing from it, an API key:
   1. Sign up at ${GET_KEY_URL}
   2. Connect at least one social account there
-  3. Settings → API key → copy it
-Don't have it yet? Say no at the key question and I'll stop here; run me again when you do and we pick up where we left off.`,
+  3. Settings, API keys: copy it (it starts with cos_live_)
+     (or run \`npx @creatoros/cli init\` and we'll find it)
+Don't have it yet? Say no at the key question and we'll stop here; run us again when you do and we pick up where we left off.`,
   );
 
   // ---- Creator or agency ----
@@ -89,7 +90,9 @@ async function collectValidKey(promptMessage: string): Promise<{ key: string; cl
     const key = (await password({ message: promptMessage, mask: '*' })).trim();
     if (!isValidKeyShape(key)) {
       console.log(
-        `That doesn't look like a CreatorOS API key (expected sk_ + 64 hex characters). Copy it from ${GET_KEY_URL} under Settings → API key.`,
+        isLegacyKey(key)
+          ? `That's an old sk_ key, which no longer works. Get a cos_live_ key from ${GET_KEY_URL} under Settings, API keys (or run \`npx @creatoros/cli init\`).`
+          : `That doesn't look like a CreatorOS API key (expected cos_live_ followed by 32 characters). Copy it from ${GET_KEY_URL} under Settings, API keys.`,
       );
       continue;
     }
@@ -97,7 +100,7 @@ async function collectValidKey(promptMessage: string): Promise<{ key: string; cl
     process.stdout.write(`Checking ${maskKey(key)} against CreatorOS servers... `);
     const valid = await client.validateKey();
     if (!valid) {
-      console.log(`rejected. Double-check it at ${GET_KEY_URL} (Settings → API key) and paste it again.`);
+      console.log(`rejected. Double-check it at ${GET_KEY_URL} (Settings, API keys) and paste it again.`);
       continue;
     }
     console.log('valid.');
@@ -116,7 +119,7 @@ async function collectKeysInteractively(state: InterviewState): Promise<CreatorO
     default: true,
   });
   if (!hasKeys) {
-    say(`No problem. Get it at ${GET_KEY_URL}: sign up, connect at least one social, then Settings → API key. Run me again and we pick up right here.`);
+    say(`No problem. Get it at ${GET_KEY_URL}: sign up, connect at least one social, then Settings, API keys (or run \`npx @creatoros/cli init\`). Run us again and we pick up right here.`);
     process.exit(0);
   }
 
@@ -167,7 +170,13 @@ async function collectKeysInteractively(state: InterviewState): Promise<CreatorO
 async function stepKey(paths: SocialAgentsPaths, state: InterviewState): Promise<CreatorOSClient> {
   let client: CreatorOSClient;
 
-  const envKey = await resolveApiKey();
+  let envKey: string | null = null;
+  try {
+    envKey = await resolveApiKey();
+  } catch (error) {
+    if (!(error instanceof LegacyApiKeyError)) throw error;
+    say(error.message);
+  }
   if (envKey && isValidKeyShape(envKey)) {
     client = new CreatorOSClient({ apiKey: envKey });
     process.stdout.write(`Found a saved key — checking ${maskKey(envKey)}... `);
@@ -184,15 +193,21 @@ async function stepKey(paths: SocialAgentsPaths, state: InterviewState): Promise
   const { accounts } = await client!.listAccounts();
   if (!isStepDone(state, 'key')) {
     say(`You have ${accounts.length} connected account(s):`);
-    let health: { accounts?: Array<{ accountId: string; status: string }> } = {};
+    let health: { accounts?: Array<{ accountId: string; status: string; needsReconnect?: boolean }> } = {};
     try {
       health = (await client!.accountsHealth()) as typeof health;
     } catch {
       // health endpoint can be add-on gated; the account list is enough
     }
     for (const account of accounts) {
-      const accountHealth = health.accounts?.find((h) => h.accountId === account._id)?.status;
-      const healthNote = accountHealth ? ` — ${accountHealth}` : account.isActive ? ' — active' : ' — inactive';
+      const accountHealth = health.accounts?.find((h) => h.accountId === account.id);
+      const healthNote = accountHealth?.needsReconnect
+        ? ' — needs a reconnect (ask us in chat for the link)'
+        : accountHealth
+          ? ` — ${accountHealth.status}`
+          : account.isActive
+            ? ' — active'
+            : ' — inactive';
       console.log(`  • ${platformLabel(account.platform)}  @${account.username ?? '?'}${healthNote}`);
     }
     if (accounts.length === 0) {
@@ -200,7 +215,7 @@ async function stepKey(paths: SocialAgentsPaths, state: InterviewState): Promise
       // to map — stop here (the key step stays undone, so the re-run lands
       // right back on this check without re-asking for the key).
       say(
-        `Your key works, but no social accounts are connected yet, so there is nothing for me to run. Connect TikTok, Instagram, YouTube, or X at ${GET_KEY_URL}, then run me again — we pick up right here.`,
+        `Your key works, but no social accounts are connected yet, so there is nothing for us to run. Connect TikTok, Instagram, YouTube, or X at ${GET_KEY_URL}, then run us again, and we pick up right here.`,
       );
       process.exit(0);
     }
@@ -227,13 +242,14 @@ async function stepFinish(client: CreatorOSClient, paths: SocialAgentsPaths, sta
 
   // Profile map — straight from the API, the user never re-types handles.
   state.answers.profiles = accounts.map((a: SocialAccount) => ({
-    accountId: a._id,
+    accountId: a.id,
     platform: a.platform,
     username: a.username ?? '',
   }));
   await writeFile(paths.profilesMd, renderProfilesMd(accounts), 'utf8');
 
-  const profileId = typeof accounts[0]?.profileId === 'string' ? accounts[0]?.profileId : accounts[0]?.profileId?._id;
+  // The key is pinned to one workspace; remember which, for the dashboard.
+  const workspaceId = (await client.getMe().catch(() => null))?.workspace?.id;
   const config: SocialAgentsConfig = {
     version: 1,
     mode: state.answers.mode ?? 'creator',
@@ -242,7 +258,7 @@ async function stepFinish(client: CreatorOSClient, paths: SocialAgentsPaths, sta
     brain: { provider: 'claude' },
     automationTarget: 'local',
     timezone,
-    profileId,
+    ...(workspaceId ? { workspaceId } : {}),
     worker: { token: workerToken },
     // No automations are configured at onboarding — the user picks their
     // set in the first chat, and the agent fills these in with sign-off.
@@ -279,15 +295,15 @@ async function stepFinish(client: CreatorOSClient, paths: SocialAgentsPaths, sta
   await saveState(paths.setupStateJson, state);
 
   say(
-    `That's the whole form. Your workspace is on disk (CLAUDE.md + social-agents/) with ${accounts.length} connected account(s) mapped, and your marketing agent is ready.
+    `That's the whole form. Your workspace is on disk (CLAUDE.md + social-agents/) with ${accounts.length} connected account(s) mapped, and your marketing agents are ready.
 
-Go talk to it — it takes over from here:
-  • it interviews you about your brand (what you sell, voice, audience, competitors)
-  • it asks where automations should live (this Mac, or an always-on cloud worker it builds for you)
-  • it offers the automation menu and sets up only what you approve
+Come talk to us. We take it from here:
+  • we interview you about your brand (what you sell, voice, audience, competitors)
+  • we ask where automations should live (this Mac, or an always-on cloud worker we build for you)
+  • we offer the automation menu and set up only what you approve
 
 Start the chat with:   social-agents        (or: npm start creatoros social-agents)
-Or open \`claude\` in this folder — it reads CLAUDE.md and picks up the same brief.`,
+Or open \`claude\` in this folder: it reads CLAUDE.md and picks up the same brief.`,
   );
   return config;
 }

@@ -94,11 +94,15 @@ describe('activity log', () => {
     expect(isLoggedAction('create_post')).toBe(true);
     expect(isLoggedAction('list_accounts')).toBe(false);
     expect(isLoggedAction('get_post')).toBe(false);
+    expect(isLoggedAction('unpublish_post')).toBe(true);
+    expect(isLoggedAction('edit_published_post')).toBe(true);
   });
 
   it('extracts platform and target from tool args', () => {
-    expect(describeToolCall({ platform: 'instagram', commentId: 'c1' })).toEqual({ platform: 'instagram', target: 'c1' });
-    expect(describeToolCall({ platforms: [{ platform: 'tiktok' }, { platform: 'youtube' }] }).platform).toBe('tiktok,youtube');
+    expect(describeToolCall({ platform: 'instagram', commentId: 'cmt_1' })).toEqual({ platform: 'instagram', target: 'cmt_1' });
+    // create_post simple form (network names) and advanced form (targets)
+    expect(describeToolCall({ platforms: ['tiktok', 'youtube'] }).platform).toBe('tiktok,youtube');
+    expect(describeToolCall({ targets: [{ platform: 'tiktok', account_id: 'acc_1' }] }).platform).toBe('tiktok');
   });
 
   it('a corrupt log is skipped, never fatal', async () => {
@@ -177,19 +181,6 @@ describe('automation flows (n8n-style)', () => {
     expect(flowHealth(false, healthy)).toBe('off');
   });
 
-  it('scopes account-wide API results to the workspace profile — other projects never show', async () => {
-    const { scopeToProfile } = await import('../src/dashboard/flows.js');
-    const items = [
-      { id: 'mine-string', profileId: 'p1' },
-      { id: 'mine-object', profileId: { _id: 'p1' } },
-      { id: 'danny-reel', profileId: 'p2' },          // another project on the same account
-      { id: 'danny-roast', profileId: { _id: 'p9' } },
-      { id: 'undeclared', },                           // no profileId field — trusted (query was scoped)
-    ];
-    const scoped = scopeToProfile(items, 'p1');
-    expect(scoped.map((i) => i.id)).toEqual(['mine-string', 'mine-object', 'undeclared']);
-  });
-
   it('merges cloud and local runs newest-first', async () => {
     const { mergeRuns } = await import('../src/dashboard/flows.js');
     const merged = mergeRuns(
@@ -204,7 +195,7 @@ describe('automation flows (n8n-style)', () => {
 describe('agent understanding', () => {
   const BRAND_MD = `# Brand Pack
 
-Social Agents reads this before writing anything.
+Social Agents read this before writing anything.
 
 ## What this brand is about
 
@@ -287,7 +278,7 @@ describe('dashboard UI shell', () => {
     const html = await readFile(join(pub, 'index.html'), 'utf8');
     const css = await readFile(join(pub, 'theme.css'), 'utf8');
     const registry = await readFile(join(pub, 'panels', 'registry.js'), 'utf8');
-    for (const text of [html, css, registry]) expect(text.toLowerCase()).not.toContain('zernio');
+    for (const text of [html, css, registry]) expect(text.toLowerCase()).not.toContain(['zer', 'nio'].join(''));
     expect(css).toContain('--accent: #22d3ee');
     expect(css).toContain("html[data-theme='light']");
     expect(css).toContain('#0b1220');

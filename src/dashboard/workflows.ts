@@ -32,7 +32,7 @@ export function describeSchedule(schedule: string): string {
 
 /**
  * Future content-marketing workflows — the roadmap this repo grows into.
- * Shown on the dashboard as coming-soon so users see where Social Agents is headed.
+ * Shown on the dashboard as coming-soon so users see where Social Agents are headed.
  */
 export const FUTURE_WORKFLOWS: WorkflowEntry[] = [
   {

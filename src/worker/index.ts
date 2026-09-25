@@ -32,9 +32,14 @@ async function main(): Promise<void> {
   migrateLegacyWorkspace(root);
   const paths = socialAgentsPaths(root);
   const config = await loadConfig(paths.configJson);
-  const apiKey = await resolveApiKey();
+  const apiKey = await resolveApiKey().catch((error: Error) => {
+    console.error(`worker: ${error.message}`);
+    process.exit(1);
+  });
   if (!apiKey || !isValidKeyShape(apiKey)) {
-    console.error('worker: no CreatorOS API key (set CREATOROS_API_KEY). Exiting.');
+    console.error(
+      'worker: no valid CreatorOS API key. Set CREATOROS_API_KEY to a cos_live_ key (creatoros.ca, Settings, API keys). Exiting.',
+    );
     process.exit(1);
   }
   const client = new CreatorOSClient({ apiKey });

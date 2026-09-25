@@ -33,7 +33,7 @@ export function routeArgs(argv: string[]): Route {
 
 export function usage(): string {
   return [
-    'Social Agents — the CreatorOS agent.',
+    'Social Agents: your CreatorOS agents.',
     '',
     'Usage:',
     '  npm start creatoros social-agents  start Social Agents (first run = onboarding interview)',

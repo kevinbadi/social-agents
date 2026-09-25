@@ -1,6 +1,6 @@
 # Social Agents
 
-**Social Agents is an open-source marketing agent that runs your entire social presence on [CreatorOS](https://www.creatoros.ca/).** CreatorOS is the service underneath: it holds your connected socials and does the actual posting, replying, and analytics. Social Agents is the agent that drives it. You sign up at [creatoros.ca](https://www.creatoros.ca/), connect your socials, copy your API key, and Social Agents takes it from there: a two-question setup, then an agent that interviews you about your brand and posts, replies, reports, and automates on your behalf.
+**Social Agents are open-source marketing agents that run your entire social presence on [CreatorOS](https://www.creatoros.ca/).** CreatorOS is the service underneath: it holds your connected socials and does the actual posting, replying, and analytics. Social Agents are the agents that drive it. You sign up at [creatoros.ca](https://www.creatoros.ca/), connect your socials, copy your API key, and Social Agents take it from there: a two-question setup, then a team of agents that interviews you about your brand and posts, replies, reports, and automates on your behalf.
 
 Social Agents' mission is simple: **hold your hand through setup, then make you autonomous.** Every client's setup is different, but everyone wants the same four things:
 
@@ -9,7 +9,7 @@ Social Agents' mission is simple: **hold your hand through setup, then make you 
 3. **Auto-reply to comments and messages** — on-brand, with sensitive stuff escalated to you
 4. **Monitor analytics** — growth, best posts, competitor movement, one recommendation a week
 
-The end state Social Agents drives toward: all four pillars on cron jobs — content posting itself, analytics checked and reported, comments and messages answered — fully autonomous, with you only reviewing what Social Agents surfaces.
+The end state Social Agents drive toward: all four pillars on cron jobs — content posting itself, analytics checked and reported, comments and messages answered — fully autonomous, with you only reviewing what Social Agents surface.
 
 ## Quick start
 
@@ -18,8 +18,9 @@ The end state Social Agents drives toward: all four pillars on cron jobs — con
 
 # 2. All the form needs is your CreatorOS API key:
 #    sign up at https://www.creatoros.ca/, connect at least one social,
-#    then Settings → API key (sk_...).
-#    No AI setup, no model keys — two questions and you're in.
+#    then Settings, API keys (cos_live_...).
+#    Or run `npx @creatoros/cli init`: Social Agents picks that key up too.
+#    No AI setup, no model keys. Two questions and you're in.
 
 # 3. Go.
 npm start creatoros social-agents
@@ -38,7 +39,7 @@ you ▸ set up the funnel on my launch post — keyword "GUIDE"
 you ▸ schedule the week from content-library/
 ```
 
-Everything Social Agents learns lives in `social-agents/` (gitignored): `BRAND.md` (voice, links, audience — every caption flows from it), `PROFILES.md` (account IDs), `social-agents.json` (config), `skills/` (playbooks), `knowledge/` (competitor research, tutorials index).
+Everything Social Agents learn lives in `social-agents/` (gitignored): `BRAND.md` (voice, links, audience — every caption flows from it), `PROFILES.md` (account IDs), `social-agents.json` (config), `skills/` (playbooks), `knowledge/` (competitor research, tutorials index).
 
 ## Dashboard
 
@@ -102,27 +103,27 @@ That's the whole integration — the shell gives you the sidebar entry, routing,
 
 ## Capability surface
 
-Social Agents talks to CreatorOS through a typed client with an **endpoint allowlist enforced in code** — not prompt discipline. Anything outside this table returns "that endpoint isn't part of CreatorOS."
+Social Agents talk only to the [CreatorOS API](https://www.creatoros.ca/docs) (`/v1`, authenticated with your `cos_live_` key), through a typed client with an **endpoint allowlist enforced in code**, not prompt discipline. Anything outside this table returns "that endpoint isn't part of CreatorOS." A key is pinned to one CreatorOS workspace (one set of connected socials); IDs come back prefixed (`acc_`, `post_`, `med_`...) and are passed through untouched.
 
 | Capability | What Social Agents can do |
 |---|---|
-| **Posting** | Shortform video (TikTok/Reels/Shorts in one call), longform YouTube (title/description/tags), carousels, text posts, native multi-part threads (X/Threads/Bluesky), multiposting across account IDs, scheduling (ISO 8601 + timezone — CreatorOS servers publish), drafts, retry, pre-publish validation, post-publish verification |
-| **Media** | Upload once (up to 5 GB), reuse the URL across every platform |
-| **Analytics** | Follower growth, per-post performance, daily metrics, best-time-to-post |
-| **Comments** | List, triage, reply, like — Facebook, Instagram, Twitter/X, Bluesky, Threads, Reddit, YouTube, LinkedIn. *(TikTok comments aren't supported by CreatorOS — enforced in code.)* |
-| **Messages** | DM replies — Twitter/X, Instagram, Facebook, Reddit, Bluesky, Telegram, WhatsApp |
-| **Funnels** | Comments-to-DM funnels (keyword → automatic DM with tracked link) on Instagram & Facebook, with click stats |
-| **Webhooks** | Subscriptions for real-time comment/message/post events, HMAC-verified |
-| **Accounts & profiles** | List, health checks, read/update — never create/delete |
+| **Posting** | Shortform video (TikTok/Reels/Shorts in one call), longform YouTube (title/description/tags), carousels, text posts, native multi-part threads (X/Threads), one post across every network, video covers, scheduling (ISO 8601 + timezone: CreatorOS servers publish), your CreatorOS queue, drafts, edits, retry, unpublish, pre-publish validation, post-publish verification |
+| **Media** | Upload once to CreatorOS, reuse the `med_` id across every network |
+| **Analytics** | Follower growth, per-post performance, daily metrics, post timelines, best-time-to-post |
+| **Comments** | List, triage, reply, like, hide. Facebook, Instagram, Twitter/X, Threads, YouTube, LinkedIn. *(TikTok comments aren't supported by CreatorOS; enforced in code.)* |
+| **Messages** | DM replies: Twitter/X, Instagram, Facebook |
+| **Funnels** | Comments-to-DM funnels (keyword → automatic DM with your link) on Instagram & Facebook, running on CreatorOS servers |
+| **Webhooks** | Endpoints for real-time comment/message/post events, signed with `X-CreatorOS-Signature` |
+| **Accounts** | List, health checks, a link to connect a new social |
 
-**Hard blocks:** profile creation/deletion, phone-number purchasing, and API-key management are refused in the client itself with *"Manage your plan in the CreatorOS app."* — even though the API would accept some of them. They bill or break things that belong to your subscription.
+**Hard blocks:** API-key management and disconnecting a social account are refused in the client itself with *"Manage your plan and API keys in the CreatorOS app."*
 
 ## Automations — the whole point
 
 During onboarding you pick a pathway (stored as `automationTarget` in `social-agents/social-agents.json`):
 
 - **Local (macOS)** — crons run as launchd agent services on your machine. Free, private, but the machine must be awake at scheduled times.
-- **VPS (Railway)** — always-on cloud. The service needs `CREATOROS_API_KEY` and `ANTHROPIC_API_KEY` set, and — this matters — **set a spend limit in the Anthropic Console (console.anthropic.com → Billing → Limits) *before* deploying.** The service runs an agent unattended; an uncapped key is an uncapped bill. Social Agents will repeat this warning every time a deploy comes up. That's on purpose.
+- **VPS (Railway)** — always-on cloud. The service needs `CREATOROS_API_KEY` (your `cos_live_` key; `CREATOROS_API_URL` only if CreatorOS tells you the API moved) and `ANTHROPIC_API_KEY` set, and — this matters — **set a spend limit in the Anthropic Console (console.anthropic.com → Billing → Limits) *before* deploying.** The service runs an agent unattended; an uncapped key is an uncapped bill. Social Agents will repeat this warning every time a deploy comes up. That's on purpose.
 
 Starter crons (onboarding sets up **zero** automations by design — your agent offers these in chat, one per pillar, and configures only what you approve):
 
@@ -157,6 +158,6 @@ npm run typecheck
 
 Layout: `src/` (harness, client, agent, tools), `templates/` (skill playbooks installed into `social-agents/skills/` at onboarding), `tests/`.
 
-Security notes: your API key is never written into any repo file (it lives in `~/.social-agents/credentials.json`, mode 0600, or the `CREATOROS_API_KEY` env var) and appears in logs only as `sk_...last4`.
+Security notes: your API key is never written into any repo file. It is read from the `CREATOROS_API_KEY` env var, then `~/.social-agents/credentials.json` (mode 0600), then `~/.creatoros/config.json` (written by `npx @creatoros/cli init`), and appears in logs only as `cos_live_...last4`. Keys from before CreatorOS had its own API (`sk_...`) no longer work: get a new one at creatoros.ca under Settings, API keys.
 
 MIT. PRs welcome.

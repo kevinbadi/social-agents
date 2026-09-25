@@ -229,25 +229,3 @@ export function cronFlows(listOutput: string, config: SocialAgentsConfig | null,
 export function mergeRuns(local: FlowRun[], cloud: FlowRun[], limit = 40): FlowRun[] {
   return [...local, ...cloud].sort((a, b) => (a.ts < b.ts ? 1 : -1)).slice(0, limit);
 }
-
-/**
- * A CreatorOS API key is ACCOUNT-wide — it can see automations from every
- * profile on the account, including other projects entirely. The dashboard
- * must only ever show the profile THIS workspace was onboarded to, so raw
- * API items are filtered here even when the list call was already scoped
- * (defense in depth: never trust a query param to do the hiding).
- * Items that don't declare a profileId are trusted only because the
- * server-side query was scoped; declared mismatches are always dropped.
- */
-export function scopeToProfile<T extends { profileId?: unknown }>(items: T[], profileId: string): T[] {
-  return items.filter((item) => {
-    const raw = item.profileId;
-    const id =
-      typeof raw === 'string'
-        ? raw
-        : raw && typeof raw === 'object'
-          ? (raw as { _id?: unknown })._id
-          : undefined;
-    return id === undefined || id === profileId;
-  });
-}

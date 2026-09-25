@@ -13,7 +13,7 @@ const INPUTS: ProvisionInputs = {
   railwayToken: 'rw-token',
   timezone: 'America/Toronto',
   workerToken: 'worker-secret',
-  creatorosKey: 'sk_' + 'a'.repeat(64),
+  creatorosKey: 'cos_live_' + 'a'.repeat(32),
   ai: { kind: 'ANTHROPIC_API_KEY', value: 'sk-ant-xyz' },
   healthAttempts: 1,
   healthDelayMs: 1,

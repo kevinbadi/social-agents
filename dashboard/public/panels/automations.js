@@ -21,12 +21,6 @@ export default {
       const hint = note('automations-connect',
         'Cloud flows come from your CreatorOS account; connect one (npm start creatoros social-agents) to see live funnel state and execution logs. Local flows render from this repo either way.');
       if (hint) root.append(hint);
-    } else if (!data.cloudScoped) {
-      // Connected key, but no onboarded profile — cloud automations are
-      // deliberately NOT shown: the key sees the whole account, and this
-      // workspace only owns one profile.
-      root.append(h('div', { class: 'note' },
-        'Cloud automations are hidden until onboarding links this workspace to a profile. Your API key can see every profile on the account — the dashboard only ever shows the one this workspace manages. Run npm start creatoros social-agents to finish setup.'));
     }
 
     const healthBadge = (flow) => {

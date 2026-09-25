@@ -3,6 +3,7 @@
  * API docs. Enforced in code: an unsupported request gets a friendly
  * "not supported on this platform" — never a raw API error.
  */
+/** The networks a CreatorOS workspace can connect. */
 export type Platform =
   | 'tiktok'
   | 'instagram'
@@ -10,15 +11,7 @@ export type Platform =
   | 'youtube'
   | 'linkedin'
   | 'twitter'
-  | 'threads'
-  | 'pinterest'
-  | 'reddit'
-  | 'bluesky'
-  | 'googlebusiness'
-  | 'telegram'
-  | 'snapchat'
-  | 'discord'
-  | 'whatsapp';
+  | 'threads';
 
 const ALIASES: Record<string, Platform> = {
   x: 'twitter',
@@ -28,8 +21,6 @@ const ALIASES: Record<string, Platform> = {
   fb: 'facebook',
   yt: 'youtube',
   'youtube shorts': 'youtube',
-  gbp: 'googlebusiness',
-  'google business': 'googlebusiness',
 };
 
 export function normalizePlatform(raw: string): Platform {
@@ -42,9 +33,7 @@ export const COMMENT_REPLY_PLATFORMS: readonly Platform[] = [
   'facebook',
   'instagram',
   'twitter',
-  'bluesky',
   'threads',
-  'reddit',
   'youtube',
   'linkedin',
 ];
@@ -54,10 +43,6 @@ export const MESSAGE_REPLY_PLATFORMS: readonly Platform[] = [
   'facebook',
   'instagram',
   'twitter',
-  'bluesky',
-  'reddit',
-  'telegram',
-  'whatsapp',
 ];
 
 /** Comment-to-DM funnels (comment automations). */
@@ -77,25 +62,18 @@ export const COMMENT_HIDE_PLATFORMS: readonly Platform[] = [
   'twitter',
 ];
 
-/** Liking/upvoting comments. Bluesky additionally requires the comment's cid. */
-export const COMMENT_LIKE_PLATFORMS: readonly Platform[] = [
-  'facebook',
-  'twitter',
-  'bluesky',
-  'reddit',
-];
+/** Liking comments. */
+export const COMMENT_LIKE_PLATFORMS: readonly Platform[] = ['facebook', 'twitter'];
 
 /** Deleting comments on a post. */
 export const COMMENT_DELETE_PLATFORMS: readonly Platform[] = [
   'facebook',
   'instagram',
-  'bluesky',
-  'reddit',
   'youtube',
   'linkedin',
 ];
 
-const LABELS: Partial<Record<Platform, string>> = {
+const LABELS: Record<Platform, string> = {
   tiktok: 'TikTok',
   instagram: 'Instagram',
   facebook: 'Facebook',
@@ -103,14 +81,6 @@ const LABELS: Partial<Record<Platform, string>> = {
   linkedin: 'LinkedIn',
   twitter: 'Twitter/X',
   threads: 'Threads',
-  pinterest: 'Pinterest',
-  reddit: 'Reddit',
-  bluesky: 'Bluesky',
-  googlebusiness: 'Google Business',
-  telegram: 'Telegram',
-  snapchat: 'Snapchat',
-  discord: 'Discord',
-  whatsapp: 'WhatsApp',
 };
 
 export function platformLabel(platform: string): string {
@@ -175,7 +145,7 @@ export function supportsCommentDelete(platform: string): boolean {
 export function assertCommentLikeSupported(platform: string): void {
   if (!supportsCommentLike(platform)) {
     throw new PlatformNotSupportedError(
-      `Liking comments works on Facebook, Twitter/X, Bluesky, and Reddit only — not supported on ${platformLabel(platform)}.`,
+      `Liking comments works on Facebook and Twitter/X only — not supported on ${platformLabel(platform)}.`,
     );
   }
 }
@@ -183,7 +153,7 @@ export function assertCommentLikeSupported(platform: string): void {
 export function assertCommentDeleteSupported(platform: string): void {
   if (!supportsCommentDelete(platform)) {
     throw new PlatformNotSupportedError(
-      `Deleting comments works on Facebook, Instagram, Bluesky, Reddit, YouTube, and LinkedIn only — not supported on ${platformLabel(platform)}.`,
+      `Deleting comments works on Facebook, Instagram, YouTube, and LinkedIn only — not supported on ${platformLabel(platform)}.`,
     );
   }
 }

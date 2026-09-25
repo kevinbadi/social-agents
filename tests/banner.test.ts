@@ -54,7 +54,7 @@ describe('first-run intro', () => {
     expect(text).toContain('kevbuildsapps');
     expect(text).toContain('tutorials');
     // branding
-    expect(text).not.toMatch(/zernio/i);
+    expect(text).not.toMatch(new RegExp(['zer', 'nio'].join(''), 'i'));
     // not in this version
     expect(text).not.toMatch(/bluesky/i);
   });

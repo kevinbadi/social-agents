@@ -76,7 +76,8 @@ export interface SocialAgentsConfig {
   timezone: string;
   worker?: WorkerConfig;
   railway?: RailwayConfig;
-  profileId?: string;
+  /** The CreatorOS workspace the API key is pinned to (from /v1/me). */
+  workspaceId?: string;
   brain?: BrainSettings;
   funnel?: FunnelConfig;
   engagementAgent?: EngagementAgentConfig;

@@ -2,7 +2,7 @@ import { existsSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
- * Everything Social Agents writes for the user lives under `social-agents/` in the
+ * Everything Social Agents write for the user lives under `social-agents/` in the
  * workspace root. The whole directory is gitignored — it holds the brand
  * pack, profile map, config, skills, and knowledge base for one client.
  */

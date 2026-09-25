@@ -64,8 +64,6 @@ const SETUP_ACTIONS = new Set([
   'create_funnel',
   'update_funnel',
   'delete_funnel',
-  'update_account',
-  'update_profile',
 ]);
 
 export function isSetupAction(action: string): boolean {
@@ -220,17 +218,21 @@ export function summarizeActivity(entries: ActivityEntry[], now: Date = new Date
  * Which tool calls count as agent ACTIONS (vs. reads). Only these land in
  * the activity log — list_/get_ calls would drown the signal.
  */
-const MUTATING_PREFIXES = ['create_', 'send_', 'reply_', 'private_reply', 'like_', 'hide_', 'update_', 'delete_', 'retry_', 'upload_'];
+const MUTATING_PREFIXES = ['create_', 'send_', 'reply_', 'private_reply', 'like_', 'hide_', 'update_', 'delete_', 'retry_', 'upload_', 'unpublish_', 'edit_'];
 export function isLoggedAction(toolName: string): boolean {
   return MUTATING_PREFIXES.some((prefix) => toolName.startsWith(prefix));
 }
 
 /** Best-effort platform/target extraction from tool args, for the log line. */
 export function describeToolCall(args: Record<string, unknown>): { platform?: string; target?: string } {
-  const platforms = args.platforms as Array<{ platform?: string }> | undefined;
-  const platform =
-    (args.platform as string | undefined) ??
-    (Array.isArray(platforms) && platforms.length ? platforms.map((p) => p.platform).filter(Boolean).join(',') : undefined);
+  // create_post: simple-form network names, or advanced-form targets.
+  const networks = [
+    ...(Array.isArray(args.platforms) ? (args.platforms as unknown[]) : []),
+    ...(Array.isArray(args.targets) ? (args.targets as unknown[]) : []),
+  ]
+    .map((p) => (typeof p === 'string' ? p : (p as { platform?: string } | null)?.platform))
+    .filter((p): p is string => Boolean(p));
+  const platform = (args.platform as string | undefined) ?? (networks.length ? networks.join(',') : undefined);
   const target =
     (args.postId as string | undefined) ??
     (args.commentId as string | undefined) ??

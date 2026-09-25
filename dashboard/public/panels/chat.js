@@ -18,7 +18,7 @@ export default {
 
     const scroll = h('div', { class: 'chat-scroll' },
       h('div', { class: 'chat-msg agent' },
-        'Social Agents here. I can read everything this dashboard shows — try "why did my last reply fail?" or "turn on the engagement sweep".'));
+        'Social Agents here. We can read everything this dashboard shows — try "why did my last reply fail?" or "turn on the engagement sweep".'));
     const push = (cls, text) => {
       const el = h('div', { class: cls }, text);
       scroll.append(el);

@@ -7,30 +7,59 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
 
-// Internal wire constant — never surfaces in user-facing output.
-const SIGNATURE_HEADER = 'x-zernio-signature';
+/** `X-CreatorOS-Signature: t=<unix seconds>,v1=<hex HMAC-SHA256>` */
+const SIGNATURE_HEADER = 'x-creatoros-signature';
+/** Signatures older than this are replays. */
+export const SIGNATURE_TOLERANCE_SECONDS = 5 * 60;
 
-/** Hex HMAC-SHA256 of the raw body, keyed by the webhook secret. */
-export function signBody(rawBody: string | Buffer, secret: string): string {
-  return createHmac('sha256', secret).update(rawBody).digest('hex');
+/** Hex HMAC-SHA256 of `"<t>.<raw body>"`, keyed by the endpoint secret (whsec_...). */
+export function signPayload(rawBody: string | Buffer, secret: string, timestamp: number): string {
+  return createHmac('sha256', secret).update(`${timestamp}.`).update(rawBody).digest('hex');
 }
 
+/** Build a header value the way CreatorOS does (tests and local replays). */
+export function signatureHeader(rawBody: string | Buffer, secret: string, timestamp = Math.floor(Date.now() / 1000)): string {
+  return `t=${timestamp},v1=${signPayload(rawBody, secret, timestamp)}`;
+}
+
+export function parseSignatureHeader(header: string): { timestamp: number; signatures: string[] } | null {
+  let timestamp: number | null = null;
+  const signatures: string[] = [];
+  for (const part of header.split(',')) {
+    const [key, value] = part.trim().split('=', 2);
+    if (!key || !value) continue;
+    if (key === 't' && /^\d+$/.test(value)) timestamp = Number(value);
+    else if (key === 'v1') signatures.push(value.toLowerCase());
+  }
+  return timestamp === null || signatures.length === 0 ? null : { timestamp, signatures };
+}
+
+/**
+ * Verify a CreatorOS webhook against the RAW request bytes: timing-safe
+ * compare, and reject timestamps more than 5 minutes from now.
+ */
 export function verifySignature(
   rawBody: string | Buffer,
   secret: string,
-  signatureHeader: string | undefined,
+  header: string | undefined,
+  nowSeconds = Math.floor(Date.now() / 1000),
 ): boolean {
-  if (!signatureHeader) return false;
-  const expected = Buffer.from(signBody(rawBody, secret), 'utf8');
-  const received = Buffer.from(signatureHeader.trim().toLowerCase(), 'utf8');
-  if (expected.length !== received.length) return false;
-  return timingSafeEqual(expected, received);
+  if (!header) return false;
+  const parsed = parseSignatureHeader(header);
+  if (!parsed) return false;
+  if (Math.abs(nowSeconds - parsed.timestamp) > SIGNATURE_TOLERANCE_SECONDS) return false;
+  const expected = Buffer.from(signPayload(rawBody, secret, parsed.timestamp), 'utf8');
+  return parsed.signatures.some((signature) => {
+    const received = Buffer.from(signature, 'utf8');
+    return received.length === expected.length && timingSafeEqual(expected, received);
+  });
 }
 
+/** Event ids are prefixed (evt_); dedupe on them, delivery is at-least-once. */
 export interface WebhookEvent {
   id?: string;
-  event: string;
-  timestamp?: string;
+  type: string;
+  created?: number;
   [key: string]: unknown;
 }
 
@@ -60,7 +89,7 @@ export function startReceiver(options: ReceiverOptions): Server {
           return;
         }
       }
-      // Respond fast (CreatorOS requires 2xx within 5s), process after.
+      // Respond fast (CreatorOS requires 2xx within 4s), process after.
       res.writeHead(200).end();
       try {
         const event = JSON.parse(raw.toString('utf8')) as WebhookEvent;

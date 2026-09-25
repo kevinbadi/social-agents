@@ -12,14 +12,14 @@ Read `social-agents/BRAND.md` (voice), `social-agents/PROFILES.md` (account IDs)
 
 ## Procedure
 
-1. `list_accounts` — note each account's ID and platform; you need both to reply.
-2. Fetch: `list_comments` with `since` = time since the last run (default: last 24h). Drill into a post with `get_post_comments`.
+1. `list_accounts`: note each account's id (`acc_...`) and platform; you need both to reply. IDs are opaque: pass them back exactly as received.
+2. Fetch: `list_comments` with `since` = time since the last run (default: last 24h); page with `cursor` = `pagination.nextCursor` while `pagination.hasMore`. Drill into a post with `get_post_comments` (post id + accountId from the list).
 3. Drop every comment marked `[YOUR OWN COMMENT …]` from triage before anything else — they're your past replies. A commenter's comment that already has your reply nested under it is HANDLED: skip it unless the commenter wrote something new after your reply.
 4. Triage every remaining comment into five buckets:
    - **REPLY** — normal engagement; draft a reply.
    - **SKIP** — spam, bots, trolls, bare emoji with nothing to say back.
    - **ESCALATE** — sensitive; do not reply, collect for the human.
-   - **LIKE-ONLY** — positive but content-free ("🔥🔥"); `like_comment` instead (Facebook, Twitter/X, Bluesky, Reddit only — Bluesky needs the comment's `cid` from `get_post_comments`; on other platforms a one-emoji reply or SKIP).
+   - **LIKE-ONLY** — positive but content-free ("🔥🔥"); `like_comment` instead (Facebook and Twitter/X only; on other networks a one-emoji reply or SKIP).
    - **HIDE** — spam/scam links, slurs, or harassment polluting the thread; `hide_comment` (Facebook, Instagram, Threads, Twitter/X only — elsewhere fall back to SKIP). Hidden comments stay visible to the commenter and admin, so it's quiet and reversible.
 5. Draft in brand voice: short (1–2 sentences), specific to what the commenter said, no corporate filler, at most one emoji if the brand uses them. Never promise anything (dates, refunds, features) the human hasn't stated publicly.
 6. Post with `reply_to_comment` (platform, postId, accountId, message, commentId). Omit commentId only when replying to the post thread itself.
@@ -31,7 +31,7 @@ Read `social-agents/BRAND.md` (voice), `social-agents/PROFILES.md` (account IDs)
 - **Escalate, never answer, when a comment involves:** refunds, billing, or order problems; complaints about the product or a bad experience; legal, medical, or financial claims; press/partnership inquiries; anything mentioning a minor or safety issue; harassment directed at a specific person — plus any extra topics in `social-agents/social-agents.json`.
 - **Skip silently:** obvious spam links, crypto/promo bots, "check my page" comments, and trolls looking for a rise. Never feed trolls — a witty clapback is the human's call, not yours.
 - **Hide, don't just skip, when the comment harms readers:** scam/phishing links, impersonation ("I'm the official support, DM me"), slurs, or targeted harassment sitting in the thread. Never hide criticism, complaints, or disagreement — negative-but-legitimate is ESCALATE or REPLY territory, and a creator caught hiding critics loses trust. On Twitter/X only replies to the account's own conversations can be hidden. When hiding might read as censorship, escalate instead.
-- **Delete is the last resort:** `delete_comment` (Facebook, Instagram, Bluesky, Reddit, YouTube, LinkedIn) is irreversible — the commenter can tell. Use it only where hide isn't available and the comment is unambiguous spam/scam/phishing, or when the human explicitly asks. Anything debatable: hide or escalate, never delete.
+- **Delete is the last resort:** `delete_comment` (Facebook, Instagram, YouTube, LinkedIn) is irreversible — the commenter can tell. Use it only where hide isn't available and the comment is unambiguous spam/scam/phishing, or when the human explicitly asks. Anything debatable: hide or escalate, never delete.
 - **Tone:** match the commenter's energy but stay kind. Enthusiastic gets enthusiastic; a thoughtful question gets a substantive answer.
 - **Don't argue.** If someone disagrees with the post's take, engage genuinely with their point once, or leave it. No back-and-forth threads.
 - **Rate sanity:** if more than ~30 REPLY-bucket comments, reply to the 30 with the most substance and tell the human how many were left.

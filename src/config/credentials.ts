@@ -6,6 +6,7 @@ import { mkdir, readFile, writeFile, chmod } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { isLegacyKey, LegacyApiKeyError } from '../client/client.js';
 
 const CREDENTIALS_DIR = join(homedir(), '.social-agents');
 const CREDENTIALS_PATH = join(CREDENTIALS_DIR, 'credentials.json');
@@ -17,16 +18,36 @@ function credentialsPath(): string {
   return LEGACY_CREDENTIALS_PATHS.find((path) => existsSync(path)) ?? CREDENTIALS_PATH;
 }
 
-export async function resolveApiKey(): Promise<string | null> {
-  const fromEnv = process.env.CREATOROS_API_KEY?.trim();
-  if (fromEnv) return fromEnv;
-  if (!existsSync(credentialsPath())) return null;
+/** Where `npx @creatoros/cli init` saves the key. */
+export function creatorosCliConfigPath(env: NodeJS.ProcessEnv = process.env): string {
+  return join(env.CREATOROS_CONFIG_DIR || join(homedir(), '.creatoros'), 'config.json');
+}
+
+async function readJson(path: string): Promise<Record<string, unknown> | null> {
+  if (!existsSync(path)) return null;
   try {
-    const parsed = JSON.parse(await readFile(credentialsPath(), 'utf8')) as { apiKey?: string };
-    return parsed.apiKey ?? null;
+    return JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>;
   } catch {
     return null;
   }
+}
+
+/**
+ * Key resolution, first hit wins: CREATOROS_API_KEY, then our own
+ * credentials file, then the CreatorOS CLI's config. A pre-CreatorOS
+ * `sk_` key is skipped when a current key exists anywhere; when it is the
+ * only key found, this throws with how to get a new one.
+ */
+export async function resolveApiKey(): Promise<string | null> {
+  const ours = await readJson(credentialsPath());
+  const cli = await readJson(creatorosCliConfigPath());
+  const candidates = [process.env.CREATOROS_API_KEY, ours?.apiKey, cli?.api_key]
+    .filter((key): key is string => typeof key === 'string' && key.trim().length > 0)
+    .map((key) => key.trim());
+  const current = candidates.find((key) => !isLegacyKey(key));
+  if (current) return current;
+  if (candidates.length > 0) throw new LegacyApiKeyError();
+  return null;
 }
 
 export interface StoredCredentials {

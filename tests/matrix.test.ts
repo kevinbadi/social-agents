@@ -25,13 +25,13 @@ describe('platform matrix — comments', () => {
   });
 
   it('refuses the other no-comment platforms too', () => {
-    for (const platform of ['pinterest', 'snapchat', 'telegram', 'whatsapp', 'googlebusiness']) {
+    for (const platform of ['pinterest', 'bluesky', 'reddit', 'telegram']) {
       expect(supportsCommentReplies(platform)).toBe(false);
     }
   });
 
   it('allows the supported comment platforms', () => {
-    for (const platform of ['facebook', 'instagram', 'twitter', 'bluesky', 'threads', 'reddit', 'youtube', 'linkedin']) {
+    for (const platform of ['facebook', 'instagram', 'twitter', 'threads', 'youtube', 'linkedin']) {
       expect(() => assertCommentReplySupported(platform)).not.toThrow();
     }
   });
@@ -54,8 +54,8 @@ describe('platform matrix — comment hiding', () => {
 });
 
 describe('platform matrix — comment likes', () => {
-  it('allows Facebook, Twitter/X, Bluesky, and Reddit', () => {
-    for (const platform of ['facebook', 'twitter', 'x', 'bluesky', 'reddit']) {
+  it('allows Facebook and Twitter/X', () => {
+    for (const platform of ['facebook', 'twitter', 'x']) {
       expect(() => assertCommentLikeSupported(platform)).not.toThrow();
     }
   });
@@ -69,8 +69,8 @@ describe('platform matrix — comment likes', () => {
 });
 
 describe('platform matrix — comment deletion', () => {
-  it('allows Facebook, Instagram, Bluesky, Reddit, YouTube, and LinkedIn', () => {
-    for (const platform of ['facebook', 'instagram', 'bluesky', 'reddit', 'youtube', 'linkedin']) {
+  it('allows Facebook, Instagram, YouTube, and LinkedIn', () => {
+    for (const platform of ['facebook', 'instagram', 'youtube', 'linkedin']) {
       expect(() => assertCommentDeleteSupported(platform)).not.toThrow();
     }
   });
@@ -85,7 +85,7 @@ describe('platform matrix — comment deletion', () => {
 
 describe('platform matrix — messages', () => {
   it('allows DM platforms', () => {
-    for (const platform of ['twitter', 'instagram', 'facebook', 'reddit', 'bluesky', 'telegram', 'whatsapp']) {
+    for (const platform of ['twitter', 'instagram', 'facebook']) {
       expect(() => assertMessageReplySupported(platform)).not.toThrow();
     }
   });
@@ -118,7 +118,7 @@ describe('matrix enforced inside the client (executor, not prompt discipline)', 
   const neverFetch: typeof fetch = () => {
     throw new Error('network should never be reached');
   };
-  const client = new CreatorOSClient({ apiKey: 'sk_' + 'a'.repeat(64), fetchImpl: neverFetch });
+  const client = new CreatorOSClient({ apiKey: 'cos_live_' + 'a'.repeat(32), fetchImpl: neverFetch });
 
   it('TikTok comment reply is refused before any network call', async () => {
     await expect(
@@ -142,12 +142,6 @@ describe('matrix enforced inside the client (executor, not prompt discipline)', 
     await expect(
       client.likeComment({ platform: 'instagram', postId: 'p', commentId: 'c', accountId: 'a' }),
     ).rejects.toThrow(PlatformNotSupportedError);
-  });
-
-  it('Bluesky like without a cid fails before any network call', async () => {
-    await expect(
-      client.likeComment({ platform: 'bluesky', postId: 'p', commentId: 'c', accountId: 'a' }),
-    ).rejects.toThrow(/cid/);
   });
 
   it('Twitter comment delete is refused before any network call', async () => {

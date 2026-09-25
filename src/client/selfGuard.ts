@@ -20,9 +20,11 @@ function isRec(value: unknown): value is Rec {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Comments: the API sets `isOwner: true` on comments by the connected account. */
+/** Comments: CreatorOS sets `from.isOwner: true` on comments by the connected account. */
 export function isOwnComment(comment: unknown): boolean {
-  return isRec(comment) && comment.isOwner === true;
+  if (!isRec(comment)) return false;
+  if (comment.isOwner === true) return true;
+  return isRec(comment.from) && comment.from.isOwner === true;
 }
 
 /**
@@ -76,12 +78,13 @@ export function annotateOwnComments(payload: unknown): Set<string> {
     if (!isRec(node)) return;
     if (isOwnComment(node)) {
       prefixText(node, OWN_COMMENT_MARKER);
-      for (const idField of ['id', 'commentId', '_id']) {
+      for (const idField of ['id', 'commentId']) {
         const id = node[idField];
         if (typeof id === 'string' && id) ownIds.add(id);
       }
     }
-    for (const value of Object.values(node)) walk(value);
+    // `from` is the author, not a comment: never walk into it.
+    for (const [key, value] of Object.entries(node)) if (key !== 'from') walk(value);
   };
   walk(payload);
   return ownIds;

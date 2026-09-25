@@ -1,13 +1,13 @@
 /**
- * CreatorOSClient — the only way Social Agents talks to CreatorOS servers.
+ * CreatorOSClient — the only way Social Agents talk to CreatorOS servers.
  * Every request funnels through `request()`, which enforces the endpoint
  * allowlist and the hard blocks before anything touches the network.
- *
- * (The base URL below is an internal wire constant. It must never surface
- * in logs, generated files, or agent output — see util/sanitize.ts.)
+ * Reference: https://www.creatoros.ca/docs
  */
-import { readFile } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { stat } from 'node:fs/promises';
 import { basename, extname } from 'node:path';
+import { Readable } from 'node:stream';
 import {
   BlockedEndpointError,
   checkEndpoint,
@@ -21,45 +21,84 @@ import {
   assertFunnelSupported,
   assertMessageReplySupported,
   assertPrivateReplySupported,
-  normalizePlatform,
 } from './platformMatrix.js';
 import { sanitize } from '../util/sanitize.js';
 import { maskKey } from '../util/mask.js';
 import { annotateOwnComments, annotateOwnMessages, SelfReplyBlockedError } from './selfGuard.js';
 import type {
-  ApiErrorBody,
   CommentAutomationBody,
   CreatePostBody,
-  MediaItem,
+  CreateWebhookBody,
+  Me,
   Post,
-  PresignResponse,
-  Profile,
   SocialAccount,
-  WebhookConfig,
+  UpdatePostBody,
+  UploadedMedia,
 } from './types.js';
 
-const BASE_URL = 'https://zernio.com/api';
+export const DEFAULT_BASE_URL = 'https://creatoros-production-5658.up.railway.app';
 
-export const KEY_SHAPE = /^sk_[0-9a-fA-F]{64}$/;
+/** CREATOROS_API_URL wins so the API can move hosts without a release. */
+export function resolveBaseUrl(env: NodeJS.ProcessEnv = process.env): string {
+  return (env.CREATOROS_API_URL?.trim() || DEFAULT_BASE_URL).replace(/\/+$/, '');
+}
+
+export const KEY_SHAPE = /^cos_(live|test)_[A-Za-z0-9_-]{32}$/;
+/** Keys issued before CreatorOS had its own API. No longer accepted here. */
+const LEGACY_KEY_SHAPE = /^sk_[0-9a-fA-F]{64}$/;
+
+export const GET_KEY_HELP =
+  'Get a CreatorOS API key (cos_live_...) at https://www.creatoros.ca/ under Settings, API keys, or run `npx @creatoros/cli init`.';
 
 export function isValidKeyShape(key: string): boolean {
   return KEY_SHAPE.test(key);
 }
 
-export class CreatorOSApiError extends Error {
-  readonly status: number;
-  readonly code?: string;
-  readonly type?: string;
-  constructor(status: number, body: ApiErrorBody | undefined, fallback: string) {
-    super(sanitize(body?.error ?? fallback));
-    this.name = 'CreatorOSApiError';
-    this.status = status;
-    this.code = body?.code;
-    this.type = body?.type;
+export function isLegacyKey(key: string): boolean {
+  return key.startsWith('sk_') || LEGACY_KEY_SHAPE.test(key);
+}
+
+export class LegacyApiKeyError extends Error {
+  constructor() {
+    super(`The saved API key (sk_...) is from before CreatorOS had its own API and no longer works. ${GET_KEY_HELP}`);
+    this.name = 'LegacyApiKeyError';
   }
 }
 
+/** A CreatorOS error: `{ error: { code, message, status } }`, parsed defensively. */
+export class CreatorOSApiError extends Error {
+  readonly status: number;
+  readonly code: string;
+  constructor(status: number, body: unknown, fallback: string) {
+    const { code, message } = parseErrorBody(body, status, fallback);
+    super(sanitize(message));
+    this.name = 'CreatorOSApiError';
+    this.status = status;
+    this.code = code;
+  }
+}
+
+export function parseErrorBody(body: unknown, status: number, fallback: string): { code: string; message: string } {
+  const error = body && typeof body === 'object' ? (body as { error?: unknown }).error : undefined;
+  if (error && typeof error === 'object') {
+    const { code, message } = error as { code?: unknown; message?: unknown };
+    return {
+      code: typeof code === 'string' ? code : 'error',
+      message: typeof message === 'string' && message ? message : fallback,
+    };
+  }
+  if (typeof error === 'string') {
+    const message = (body as { message?: unknown }).message;
+    return { code: error, message: typeof message === 'string' ? message : error.replace(/_/g, ' ') };
+  }
+  if (status === 401) return { code: 'unauthorized', message: `CreatorOS rejected the API key. ${GET_KEY_HELP}` };
+  return { code: 'http_error', message: fallback };
+}
+
 type Query = Record<string, string | number | boolean | undefined>;
+
+/** IDs are opaque: encode them into paths, never reshape them. */
+const enc = encodeURIComponent;
 
 export interface CreatorOSClientOptions {
   apiKey: string;
@@ -78,7 +117,7 @@ export class CreatorOSClient {
 
   constructor(options: CreatorOSClientOptions) {
     this.apiKey = options.apiKey;
-    this.baseUrl = (options.baseUrl ?? BASE_URL).replace(/\/$/, '');
+    this.baseUrl = (options.baseUrl ?? resolveBaseUrl()).replace(/\/$/, '');
     this.fetchImpl = options.fetchImpl ?? fetch;
   }
 
@@ -89,27 +128,37 @@ export class CreatorOSClient {
   async request<T = unknown>(
     method: HttpMethod,
     path: string,
-    opts: { query?: Query; body?: unknown; headers?: Record<string, string> } = {},
+    opts: {
+      query?: Query;
+      body?: unknown;
+      /** Raw request body (media upload); sent as-is with the given headers. */
+      raw?: ReadableStream | Uint8Array | string;
+      headers?: Record<string, string>;
+    } = {},
   ): Promise<T> {
     const decision = checkEndpoint(method, path);
     if (!decision.allowed) throw new BlockedEndpointError(decision);
 
     const url = new URL(this.baseUrl + path);
     for (const [key, value] of Object.entries(opts.query ?? {})) {
-      if (value !== undefined) url.searchParams.set(key, String(value));
+      if (value !== undefined && value !== '') url.searchParams.set(key, String(value));
     }
 
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.apiKey}`,
+      'User-Agent': 'social-agents',
       ...opts.headers,
     };
-    let body: string | undefined;
+    let body: RequestInit['body'] = opts.raw as RequestInit['body'];
     if (opts.body !== undefined) {
       headers['Content-Type'] = 'application/json';
       body = JSON.stringify(opts.body);
     }
 
-    const response = await this.fetchImpl(url.toString(), { method, headers, body });
+    const init: RequestInit & { duplex?: 'half' } = { method, headers, body };
+    // Streamed bodies (media) need half-duplex in Node's fetch.
+    if (opts.raw instanceof ReadableStream) init.duplex = 'half';
+    const response = await this.fetchImpl(url.toString(), init);
     const text = await response.text();
     let parsed: unknown;
     try {
@@ -118,22 +167,23 @@ export class CreatorOSClient {
       parsed = undefined;
     }
 
-    if (!response.ok && response.status !== 202) {
-      throw new CreatorOSApiError(
-        response.status,
-        parsed as ApiErrorBody | undefined,
-        `CreatorOS request failed (${response.status})`,
-      );
+    if (!response.ok) {
+      throw new CreatorOSApiError(response.status, parsed, `CreatorOS request failed (${response.status})`);
     }
     return parsed as T;
   }
 
-  // ---- Auth ----
+  // ---- Workspace ----
+
+  /** The key's user and workspace. A key is pinned to exactly one workspace. */
+  async getMe(): Promise<Me> {
+    return this.request('GET', '/v1/me');
+  }
 
   /** Live authenticated check. Shape-check the key with isValidKeyShape first. */
   async validateKey(): Promise<boolean> {
     try {
-      await this.request('GET', '/v1/users');
+      await this.getMe();
       return true;
     } catch (error) {
       if (error instanceof CreatorOSApiError && (error.status === 401 || error.status === 403)) {
@@ -145,7 +195,7 @@ export class CreatorOSClient {
 
   // ---- Accounts ----
 
-  async listAccounts(query: Query = {}): Promise<{ accounts: SocialAccount[]; hasAnalyticsAccess?: boolean }> {
+  async listAccounts(query: Query = {}): Promise<{ accounts: SocialAccount[] }> {
     return this.request('GET', '/v1/accounts', { query });
   }
 
@@ -154,103 +204,87 @@ export class CreatorOSClient {
   }
 
   async accountHealth(accountId: string): Promise<unknown> {
-    return this.request('GET', `/v1/accounts/${accountId}/health`);
+    return this.request('GET', `/v1/accounts/${enc(accountId)}/health`);
   }
 
   async followerStats(query: Query = {}): Promise<unknown> {
-    return this.request('GET', '/v1/accounts/follower-stats', { query });
+    return this.request('GET', '/v1/accounts/followers', { query });
   }
 
   async tiktokCreatorInfo(accountId: string, mediaType: 'video' | 'photo' = 'video'): Promise<unknown> {
-    return this.request('GET', `/v1/accounts/${accountId}/tiktok/creator-info`, {
+    return this.request('GET', `/v1/accounts/${enc(accountId)}/tiktok/creator-info`, {
       query: { mediaType },
     });
   }
 
-  // ---- Profiles (read/update only) ----
-
-  async listProfiles(): Promise<{ profiles: Profile[] }> {
-    return this.request('GET', '/v1/profiles');
-  }
-
-  async getProfile(profileId: string): Promise<{ profile: Profile }> {
-    return this.request('GET', `/v1/profiles/${profileId}`);
-  }
-
-  async updateProfile(
-    profileId: string,
-    body: { name?: string; description?: string; color?: string },
-  ): Promise<unknown> {
-    return this.request('PUT', `/v1/profiles/${profileId}`, { body });
+  /** A link the human opens to connect a social account to the workspace. */
+  async connectLink(platform: string): Promise<{ platform: string; auth_url: string }> {
+    return this.request('GET', `/v1/connect/${enc(platform)}`);
   }
 
   // ---- Posts ----
 
-  async createPost(body: CreatePostBody, requestId?: string): Promise<{ post: Post; message?: string }> {
-    return this.request('POST', '/v1/posts', {
-      body,
-      headers: requestId ? { 'x-request-id': requestId } : undefined,
-    });
+  async createPost(body: CreatePostBody): Promise<Post> {
+    return this.request('POST', '/v1/posts', { body });
   }
 
-  async getPost(postId: string): Promise<{ post: Post }> {
-    return this.request('GET', `/v1/posts/${postId}`);
+  async getPost(postId: string): Promise<Post> {
+    return this.request('GET', `/v1/posts/${enc(postId)}`);
   }
 
   async listPosts(query: Query = {}): Promise<{ posts: Post[]; pagination?: unknown }> {
     return this.request('GET', '/v1/posts', { query });
   }
 
-  async updatePost(postId: string, body: Partial<CreatePostBody>): Promise<unknown> {
-    return this.request('PUT', `/v1/posts/${postId}`, { body });
+  /** Edit a draft or scheduled post: caption and/or time. */
+  async updatePost(postId: string, body: UpdatePostBody): Promise<Post> {
+    return this.request('PATCH', `/v1/posts/${enc(postId)}`, { body });
   }
 
   async deletePost(postId: string): Promise<unknown> {
-    return this.request('DELETE', `/v1/posts/${postId}`);
+    return this.request('DELETE', `/v1/posts/${enc(postId)}`);
   }
 
   async retryPost(postId: string): Promise<unknown> {
-    return this.request('POST', `/v1/posts/${postId}/retry`);
+    return this.request('POST', `/v1/posts/${enc(postId)}/retry`, { body: {} });
+  }
+
+  /** Take a published post down from one network (not Instagram or TikTok). */
+  async unpublishPost(postId: string, platform: string): Promise<unknown> {
+    return this.request('POST', `/v1/posts/${enc(postId)}/unpublish`, { body: { platform } });
+  }
+
+  /** Edit the text of an already-published post (X, Facebook, LinkedIn, YouTube). */
+  async editPublishedPost(postId: string, body: { platform: string; content: string; accountId?: string }): Promise<unknown> {
+    return this.request('POST', `/v1/posts/${enc(postId)}/edit`, { body });
   }
 
   async updateYouTubeMetadata(postId: string, body: Record<string, unknown>): Promise<unknown> {
-    return this.request('POST', `/v1/posts/${postId}/update-metadata`, {
-      body: { platform: 'youtube', ...body },
-    });
+    return this.request('POST', `/v1/posts/${enc(postId)}/update-metadata`, { body });
   }
 
   // ---- Media ----
 
-  async presignMedia(filename: string, contentType: string, size?: number): Promise<PresignResponse> {
-    return this.request('POST', '/v1/media/presign', { body: { filename, contentType, size } });
-  }
-
-  /** Upload a local file: presign → PUT bytes → return a MediaItem for posts. */
-  async uploadMediaFromFile(filePath: string): Promise<MediaItem> {
-    const bytes = await readFile(filePath);
-    const filename = basename(filePath);
+  /**
+   * Stream a local file to POST /v1/media. Returns `{ id: "med_...", url }`:
+   * pass the id in `media` (or `cover`) on createPost.
+   */
+  async uploadMediaFromFile(filePath: string): Promise<UploadedMedia> {
     const contentType = guessContentType(filePath);
-    const presigned = await this.presignMedia(filename, contentType, bytes.byteLength);
-    const put = await this.fetchImpl(presigned.uploadUrl, {
-      method: 'PUT',
-      headers: { 'Content-Type': contentType },
-      body: new Uint8Array(bytes),
+    const { size } = await stat(filePath);
+    return this.request('POST', '/v1/media', {
+      raw: Readable.toWeb(createReadStream(filePath)) as ReadableStream,
+      headers: {
+        'Content-Type': contentType,
+        'Content-Length': String(size),
+        'X-Filename': basename(filePath),
+      },
     });
-    if (!put.ok) {
-      throw new Error(`Media upload failed (${put.status}) for ${filename}`);
-    }
-    return {
-      type: contentType.startsWith('video/') ? 'video' : contentType === 'application/pdf' ? 'document' : 'image',
-      url: presigned.publicUrl,
-      filename,
-      size: bytes.byteLength,
-      mimeType: contentType,
-    };
   }
 
   // ---- Validation ----
 
-  async validatePost(body: CreatePostBody): Promise<unknown> {
+  async validatePost(body: Record<string, unknown>): Promise<unknown> {
     return this.request('POST', '/v1/tools/validate/post', { body });
   }
 
@@ -264,8 +298,8 @@ export class CreatorOSClient {
 
   // ---- Analytics ----
 
-  async getAnalytics(query: Query = {}): Promise<unknown> {
-    return this.request('GET', '/v1/analytics', { query });
+  async postAnalytics(query: Query = {}): Promise<unknown> {
+    return this.request('GET', '/v1/analytics/posts', { query });
   }
 
   async bestTimeToPost(query: Query = {}): Promise<unknown> {
@@ -273,7 +307,7 @@ export class CreatorOSClient {
   }
 
   async dailyMetrics(query: Query = {}): Promise<unknown> {
-    return this.request('GET', '/v1/analytics/daily-metrics', { query });
+    return this.request('GET', '/v1/analytics/daily', { query });
   }
 
   async postTimeline(query: Query = {}): Promise<unknown> {
@@ -289,7 +323,7 @@ export class CreatorOSClient {
   }
 
   async getPostComments(postId: string, query: Query): Promise<unknown> {
-    const data = await this.request('GET', `/v1/inbox/comments/${postId}`, { query });
+    const data = await this.request('GET', `/v1/inbox/comments/${enc(postId)}`, { query });
     for (const id of annotateOwnComments(data)) this.ownCommentIds.add(id);
     return data;
   }
@@ -317,32 +351,25 @@ export class CreatorOSClient {
   }): Promise<unknown> {
     assertCommentReplySupported(args.platform);
     this.assertNotOwnComment(args.commentId, 'Replying to');
-    return this.request('POST', `/v1/inbox/comments/${args.postId}`, {
-      body: { accountId: args.accountId, message: args.message, commentId: args.commentId },
+    return this.request('POST', `/v1/inbox/comments/${enc(args.postId)}/reply`, {
+      body: { accountId: args.accountId, message: args.message, ...(args.commentId ? { commentId: args.commentId } : {}) },
     });
   }
 
-  /**
-   * Like/upvote a comment. Facebook, Twitter/X, Bluesky, Reddit; Bluesky
-   * additionally needs the comment's cid (content identifier).
-   */
+  /** Like a comment. */
   async likeComment(args: {
     platform: string;
     postId: string;
     commentId: string;
     accountId: string;
-    cid?: string;
   }): Promise<unknown> {
     assertCommentLikeSupported(args.platform);
-    if (normalizePlatform(args.platform) === 'bluesky' && !args.cid) {
-      throw new Error('Bluesky likes need the comment cid — it comes back with the comment in get_post_comments.');
-    }
-    return this.request('POST', `/v1/inbox/comments/${args.postId}/${args.commentId}/like`, {
-      body: { accountId: args.accountId, ...(args.cid ? { cid: args.cid } : {}) },
+    return this.request('POST', `/v1/inbox/comments/${enc(args.postId)}/${enc(args.commentId)}/like`, {
+      body: { accountId: args.accountId },
     });
   }
 
-  /** Delete a comment. Facebook, Instagram, Bluesky, Reddit, YouTube, LinkedIn. */
+  /** Delete a comment. */
   async deleteComment(args: {
     platform: string;
     postId: string;
@@ -350,8 +377,8 @@ export class CreatorOSClient {
     accountId: string;
   }): Promise<unknown> {
     assertCommentDeleteSupported(args.platform);
-    return this.request('DELETE', `/v1/inbox/comments/${args.postId}`, {
-      query: { accountId: args.accountId, commentId: args.commentId },
+    return this.request('DELETE', `/v1/inbox/comments/${enc(args.postId)}/${enc(args.commentId)}`, {
+      query: { accountId: args.accountId },
     });
   }
 
@@ -367,7 +394,7 @@ export class CreatorOSClient {
     accountId: string;
   }): Promise<unknown> {
     assertCommentHideSupported(args.platform);
-    return this.request('POST', `/v1/inbox/comments/${args.postId}/${args.commentId}/hide`, {
+    return this.request('POST', `/v1/inbox/comments/${enc(args.postId)}/${enc(args.commentId)}/hide`, {
       body: { accountId: args.accountId },
     });
   }
@@ -379,12 +406,11 @@ export class CreatorOSClient {
     commentId: string;
     accountId: string;
     message: string;
-    buttons?: unknown[];
   }): Promise<unknown> {
     assertPrivateReplySupported(args.platform);
     this.assertNotOwnComment(args.commentId, 'Privately replying to');
-    return this.request('POST', `/v1/inbox/comments/${args.postId}/${args.commentId}/private-reply`, {
-      body: { accountId: args.accountId, message: args.message, buttons: args.buttons },
+    return this.request('POST', `/v1/inbox/comments/${enc(args.postId)}/${enc(args.commentId)}/private-reply`, {
+      body: { accountId: args.accountId, message: args.message },
     });
   }
 
@@ -395,7 +421,7 @@ export class CreatorOSClient {
   }
 
   async getConversationMessages(conversationId: string, query: Query): Promise<unknown> {
-    const data = await this.request('GET', `/v1/inbox/conversations/${conversationId}/messages`, { query });
+    const data = await this.request('GET', `/v1/inbox/conversations/${enc(conversationId)}/messages`, { query });
     const latestIsOwn = annotateOwnMessages(data);
     if (latestIsOwn !== null) this.conversationLatestOwn.set(conversationId, latestIsOwn);
     return data;
@@ -420,66 +446,61 @@ export class CreatorOSClient {
         `Blocked: the latest message in conversation ${args.conversationId} is this account's own — sending now would answer yourself and loop. Wait for the other person to reply. For an intentional follow-up the human explicitly asked for, pass allowFollowUp: true.`,
       );
     }
-    const result = await this.request('POST', `/v1/inbox/conversations/${args.conversationId}/messages`, {
+    const result = await this.request('POST', `/v1/inbox/conversations/${enc(args.conversationId)}/messages`, {
       body: { accountId: args.accountId, message: args.message },
     });
     this.conversationLatestOwn.set(args.conversationId, true);
     return result;
   }
 
-  // ---- Comment-to-DM funnels ----
+  // ---- Comment-to-DM funnels (/v1/automations) ----
 
   /** Create a funnel. `platform` of the target account must be IG/FB. */
   async createCommentAutomation(platform: string, body: CommentAutomationBody): Promise<unknown> {
     assertFunnelSupported(platform);
-    return this.request('POST', '/v1/comment-automations', { body });
+    return this.request('POST', '/v1/automations', { body });
   }
 
-  async listCommentAutomations(profileId?: string): Promise<unknown> {
-    return this.request('GET', '/v1/comment-automations', { query: { profileId } });
+  async listCommentAutomations(): Promise<unknown> {
+    return this.request('GET', '/v1/automations');
   }
 
   async getCommentAutomation(automationId: string): Promise<unknown> {
-    return this.request('GET', `/v1/comment-automations/${automationId}`);
+    return this.request('GET', `/v1/automations/${enc(automationId)}`);
   }
 
-  async updateCommentAutomation(automationId: string, body: Partial<CommentAutomationBody> & { isActive?: boolean }): Promise<unknown> {
-    return this.request('PATCH', `/v1/comment-automations/${automationId}`, { body });
+  async updateCommentAutomation(
+    automationId: string,
+    body: Partial<Pick<CommentAutomationBody, 'dmMessage' | 'keywords' | 'commentReply'>>,
+  ): Promise<unknown> {
+    return this.request('PATCH', `/v1/automations/${enc(automationId)}`, { body });
   }
 
   async deleteCommentAutomation(automationId: string): Promise<unknown> {
-    return this.request('DELETE', `/v1/comment-automations/${automationId}`);
+    return this.request('DELETE', `/v1/automations/${enc(automationId)}`);
   }
 
   async commentAutomationLogs(automationId: string, query: Query = {}): Promise<unknown> {
-    return this.request('GET', `/v1/comment-automations/${automationId}/logs`, { query });
+    return this.request('GET', `/v1/automations/${enc(automationId)}/logs`, { query });
   }
 
   // ---- Webhooks ----
 
-  async listWebhooks(): Promise<{ webhooks: WebhookConfig[] }> {
-    return this.request('GET', '/v1/webhooks/settings');
+  async listWebhooks(): Promise<unknown> {
+    return this.request('GET', '/v1/webhooks');
   }
 
-  async createWebhook(body: WebhookConfig): Promise<unknown> {
-    return this.request('POST', '/v1/webhooks/settings', { body });
-  }
-
-  async updateWebhook(body: WebhookConfig & { _id: string }): Promise<unknown> {
-    return this.request('PUT', '/v1/webhooks/settings', { body });
+  /** The response carries the signing `secret` (whsec_...) once, and never again. */
+  async createWebhook(body: CreateWebhookBody): Promise<unknown> {
+    return this.request('POST', '/v1/webhooks', { body });
   }
 
   async deleteWebhook(webhookId: string): Promise<unknown> {
-    // Delete takes the id as a query param, per the live docs.
-    return this.request('DELETE', '/v1/webhooks/settings', { query: { id: webhookId } });
+    return this.request('DELETE', `/v1/webhooks/${enc(webhookId)}`);
   }
 
   async testWebhook(webhookId: string): Promise<unknown> {
-    return this.request('POST', '/v1/webhooks/test', { body: { webhookId } });
-  }
-
-  async webhookLogs(query: Query = {}): Promise<unknown> {
-    return this.request('GET', '/v1/webhooks/logs', { query });
+    return this.request('POST', `/v1/webhooks/${enc(webhookId)}/test`);
   }
 }
 
@@ -491,15 +512,14 @@ const CONTENT_TYPES: Record<string, string> = {
   '.gif': 'image/gif',
   '.mp4': 'video/mp4',
   '.mov': 'video/quicktime',
-  '.avi': 'video/avi',
   '.webm': 'video/webm',
-  '.m4v': 'video/x-m4v',
-  '.mpeg': 'video/mpeg',
-  '.pdf': 'application/pdf',
 };
 
 export function guessContentType(filePath: string): string {
   const ext = extname(filePath).toLowerCase();
+  if (['.heic', '.heif', '.avif'].includes(ext)) {
+    throw new Error(`${ext} images aren't accepted by the social networks. Convert to JPG first (e.g. \`sips -s format jpeg in${ext} --out out.jpg\`).`);
+  }
   const type = CONTENT_TYPES[ext];
   if (!type) {
     throw new Error(

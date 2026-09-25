@@ -4,13 +4,13 @@ Publish a longform video to YouTube with title, description, and tags; also upda
 
 ## Before anything
 
-Read `social-agents/BRAND.md` — the description's pitch, links, and CTA come from it. `social-agents/PROFILES.md` has the YouTube account ID.
+Read `social-agents/BRAND.md` — the description's pitch, links, and CTA come from it. Get the YouTube account id (`acc_...`) from a fresh `list_accounts`; ids saved in `social-agents/PROFILES.md` can be re-issued by CreatorOS.
 
 ## Procedure
 
 1. `upload_media` with the video path — longform files are large; uploads can take a while, don't assume failure early.
-2. `create_post` with the YouTube account entry: `content` = description (≤5,000 chars), `title` (≤100 chars), `tags` (each ≤100 chars, ≤500 combined). Optional `platformSpecificData`: `visibility`, `categoryId`, `playlistId`, `firstComment` (auto-posted and pinned).
-3. Custom thumbnail: set `mediaItems[0].thumbnail` (JPEG/PNG ≤2MB, ≥640px wide). Not available for Shorts.
+2. `create_post`, advanced form: `targets: [{ platform: "youtube", account_id: <acc_ id>, options: { title, visibility, categoryId, playlistId, madeForKids, firstComment } }]`, `content` = description (≤5,000 chars), `title` (≤100 chars), `tags` (each ≤100 chars, ≤500 combined), `post_type: "long_video"`. `firstComment` is auto-posted and pinned.
+3. Custom thumbnail: `upload_media` the image and pass `cover: <med_ id>` (JPEG/PNG ≤2MB). Not available for Shorts.
 4. Scheduled longform uploads go up private and flip public at the scheduled time — that's normal.
 5. Metadata updates on published videos: `update_youtube_metadata`.
 
@@ -25,4 +25,4 @@ Read `social-agents/BRAND.md` — the description's pitch, links, and CTA come f
 
 ## Verification
 
-`create_post` returns a post ID; check `get_post` — status, title, and target account all correct. Failed publish → `retry_post` once, then report.
+`create_post` returns a post id; check `get_post` — status, title, and target account all correct. Failed publish → `retry_post` once, then report.

@@ -59,6 +59,11 @@ function isFancy(): boolean {
   );
 }
 
+/** Plain block-letter rows for a word, in the banner font. */
+export function renderWordRows(text: string): string[] {
+  return renderRows(text);
+}
+
 function renderRows(text: string): string[] {
   const rows = Array.from({ length: ROWS }, () => '');
   for (const ch of text) {
@@ -200,8 +205,8 @@ export const SOCIAL_AGENTS_CAPABILITY_SECTIONS: ChecklistSection[] = [
   {
     heading: 'Messaging & comments — set up through webhooks',
     items: [
-      { name: 'Message replies', detail: 'Twitter/X, Instagram, Facebook, Reddit' },
-      { name: 'Comment replies', detail: 'every platform but TikTok — X, IG, FB, Threads, Reddit, YouTube, LinkedIn' },
+      { name: 'Message replies', detail: 'Twitter/X, Instagram, Facebook' },
+      { name: 'Comment replies', detail: 'every platform but TikTok — X, IG, FB, Threads, YouTube, LinkedIn' },
       { name: 'Comment-to-DM workflows', detail: 'Facebook & Instagram — keyword comment → automatic DM with your link' },
     ],
   },
@@ -214,7 +219,7 @@ export const SOCIAL_AGENTS_CAPABILITY_SECTIONS: ChecklistSection[] = [
       },
       {
         name: 'Marketing skills, built in',
-        detail: 'KevBuildsApps ships the best marketing skills + tutorials Social Agents reads directly',
+        detail: 'KevBuildsApps ships the best marketing skills + tutorials Social Agents read directly',
       },
     ],
   },
@@ -274,7 +279,7 @@ export async function showBrainLink(status: BrainStatus): Promise<void> {
         ? 'connected — thinking via your API key'
         : status === 'custom'
           ? 'connected — thinking via your configured model API'
-          : 'not detected — fine: the setup form needs no AI; your agent chat comes after';
+          : 'not detected — fine: the setup form needs no AI; your agents\' chat comes after';
   if (!isFancy()) {
     console.log(`Claude: ${label}`);
     return;
@@ -312,7 +317,7 @@ export async function showBrainLink(status: BrainStatus): Promise<void> {
  */
 export async function showIntro(): Promise<void> {
   await showWordmark('CREATOR OS', 'the operating system for social media', CREATOROS_STOPS);
-  await showWordmark('SOCIAL AGENTS', 'your CreatorOS agent · posts · replies · reports', SOCIAL_AGENTS_STOPS);
+  await showWordmark('SOCIAL AGENTS', 'your CreatorOS agents · posts · replies · reports', SOCIAL_AGENTS_STOPS);
   await showBrainLink(detectBrain());
-  await showChecklist(SOCIAL_AGENTS_CAPABILITY_SECTIONS, 'what Social Agents runs for you');
+  await showChecklist(SOCIAL_AGENTS_CAPABILITY_SECTIONS, 'what Social Agents run for you');
 }

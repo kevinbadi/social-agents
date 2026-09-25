@@ -3,7 +3,9 @@
 #
 # Railway setup (one time):
 #   1. New service from this repo; set Dockerfile path to Dockerfile.worker.
-#   2. Variables: CREATOROS_API_KEY, ANTHROPIC_API_KEY (or
+#   2. Variables: CREATOROS_API_KEY (a cos_live_ key: creatoros.ca, Settings,
+#      API keys), optionally CREATOROS_API_URL (only if CreatorOS tells you
+#      the API moved), ANTHROPIC_API_KEY (or
 #      CLAUDE_CODE_OAUTH_TOKEN from `claude setup-token` to stay on a
 #      Claude plan), SOCIAL_AGENTS_WORKER_TOKEN (any long random string),
 #      TZ (e.g. America/Toronto — cron hours run in this zone).

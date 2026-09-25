@@ -51,7 +51,6 @@ import {
   funnelFlows,
   cronFlows,
   mergeRuns,
-  scopeToProfile,
   type FlowRun,
   type FlowStats,
   type LiveFunnel,
@@ -172,7 +171,7 @@ async function healthPayload(session: Session): Promise<unknown> {
             present: true,
             valid,
             maskedKey: session.client.maskedKey,
-            ...(valid ? {} : { error: 'CreatorOS rejected the key — copy it again from https://www.creatoros.ca/ (Settings → API key).' }),
+            ...(valid ? {} : { error: 'CreatorOS rejected the key. Copy it again from https://www.creatoros.ca/ (Settings, API keys) or run `npx @creatoros/cli init`.' }),
           },
         };
       } catch (error) {
@@ -287,18 +286,13 @@ async function fetchCloudState(session: Session): Promise<NonNullable<typeof clo
   const funnels: LiveFunnel[] = [];
   const statsById = new Map<string, FlowStats>();
   const runs: FlowRun[] = [];
-  // The key is account-wide; the workspace owns exactly ONE profile. No
-  // configured profile → no cloud fetch at all — an unscoped list would
-  // surface automations from the user's other projects (seen in the wild).
-  const profileId = session.config?.profileId;
-  if (session.client && profileId) {
+  // A CreatorOS key is pinned to one workspace, so every automation it
+  // can see belongs to this workspace.
+  if (session.client) {
     try {
-      const raw = scopeToProfile(
-        asArray(await session.client.listCommentAutomations(profileId)),
-        profileId,
-      );
+      const raw = asArray(await session.client.listCommentAutomations());
       for (const item of raw.slice(0, 5)) {
-        const id = str(item._id) ?? str(item.id);
+        const id = str(item.id);
         if (!id) continue;
         const funnel: LiveFunnel = {
           id,
@@ -310,7 +304,7 @@ async function fetchCloudState(session: Session): Promise<NonNullable<typeof clo
         funnels.push(funnel);
         // The funnel's own execution log — real cloud-side runs.
         try {
-          const logs = asArray(await session.client.commentAutomationLogs(id, { limit: 30 }));
+          const logs = asArray(await session.client.commentAutomationLogs(id)).slice(0, 30);
           const stats: FlowStats = { lastTs: null, lastOutcome: null, sent: 0, skipped: 0, failed: 0 };
           for (const log of logs) {
             const outcome = str(log.status) ?? 'sent';
@@ -383,8 +377,8 @@ async function automationsPayload(session: Session): Promise<unknown> {
 
   return {
     connected: session.client !== null,
-    // Cloud flows are hidden (not fetched) until onboarding links a profile.
-    cloudScoped: Boolean(config?.profileId),
+    // A key sees exactly one workspace, so cloud flows are always in scope.
+    cloudScoped: session.client !== null,
     flows,
     runs: mergeRuns(localRuns, [...cloud.runs, ...workerFlowRuns(worker.runs)]),
     crons: { ok: cronListCache.ok, output: cronListCache.output },

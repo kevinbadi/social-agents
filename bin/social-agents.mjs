@@ -19,10 +19,15 @@ const deps = spawnSync(process.execPath, [join(root, 'scripts', 'ensure-deps.mjs
 });
 if (deps.status !== 0) process.exit(deps.status ?? 1);
 
-// `social-agents` → the chat; `social-agents dashboard` → mission control in the browser.
-const sub = (process.argv[2] ?? 'social-agents').toLowerCase();
+// `social-agents` → the chat; `social-agents <workspace>` → that workspace's chat;
+// `social-agents add` → another API key; `social-agents dashboard` → the browser.
+const [first, ...rest] = process.argv.slice(2);
+const command = (first ?? 'social-agents').toLowerCase();
+const args = ['add', 'dashboard', 'social-agents'].includes(command)
+  ? [command, ...rest]
+  : ['social-agents', first, ...rest];
 const tsx = join(root, 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx');
-const run = spawnSync(tsx, [join(root, 'src', 'index.ts'), 'creatoros', sub], {
+const run = spawnSync(tsx, [join(root, 'src', 'index.ts'), 'creatoros', ...args], {
   cwd: root,
   stdio: 'inherit',
 });

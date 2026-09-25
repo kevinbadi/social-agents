@@ -137,8 +137,22 @@ export function heatmap(data) {
   return h('div', {}, grid, legend);
 }
 
+/* --------------------------- workspaces ---------------------------- */
+// One CreatorOS API key = one workspace (one set of socials). Every API call
+// names the selected one; the server answers with that workspace's data only.
+
+const WORKSPACE_KEY = 'social-agents-workspace';
+let currentWorkspace = null;
+try { currentWorkspace = localStorage.getItem(WORKSPACE_KEY); } catch { /* storage off — default workspace */ }
+
+/** Append the selected workspace to an /api path. */
+export function withWorkspace(path) {
+  if (!currentWorkspace) return path;
+  return `${path}${path.includes('?') ? '&' : '?'}workspace=${encodeURIComponent(currentWorkspace)}`;
+}
+
 export async function api(path, options) {
-  const res = await fetch(path, options);
+  const res = await fetch(withWorkspace(path), options);
   if (!res.ok) {
     let detail = `HTTP ${res.status}`;
     try { detail = (await res.json()).error || detail; } catch { /* keep status */ }
@@ -147,7 +161,7 @@ export async function api(path, options) {
   return res.json();
 }
 
-export const ctx = { h, esc, timeAgo, statusClass, badge, dot, card, errorCard, note, md, heatmap, api };
+export const ctx = { h, esc, timeAgo, statusClass, badge, dot, card, errorCard, note, md, heatmap, api, withWorkspace };
 
 /* ------------------------------ shell ------------------------------ */
 
@@ -162,6 +176,24 @@ for (const panel of panels) {
     spacer,
   );
 }
+
+// Workspace switcher: one entry per CreatorOS API key.
+const picker = document.getElementById('workspace-picker');
+fetch('/api/workspaces').then((r) => r.json()).then(({ workspaces, default: fallback }) => {
+  const stale = !workspaces.some((w) => w.slug === currentWorkspace);
+  if (stale) currentWorkspace = fallback;
+  if (!workspaces.length) return;
+  if (stale) show(); // the saved choice is gone: repaint on the default
+  picker.replaceChildren(...workspaces.map((w) =>
+    h('option', { value: w.slug, ...(w.slug === currentWorkspace ? { selected: '' } : {}) }, w.name)));
+  picker.hidden = false;
+  picker.disabled = workspaces.length === 1;
+}).catch(() => { /* no picker — the default workspace still renders */ });
+picker.addEventListener('change', () => {
+  currentWorkspace = picker.value;
+  try { localStorage.setItem(WORKSPACE_KEY, currentWorkspace); } catch { /* per-visit only */ }
+  show();
+});
 
 document.getElementById('theme-toggle').addEventListener('click', () => {
   const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
@@ -194,7 +226,7 @@ async function show() {
   if (!panel.fetchData) { paint(null); return; }
 
   // Stale-while-revalidate: cached payload paints instantly, then refresh.
-  const cacheKey = `social-agents-cache-${panel.id}`;
+  const cacheKey = `social-agents-cache-${currentWorkspace ?? 'default'}-${panel.id}`;
   const cached = localStorage.getItem(cacheKey);
   if (cached) {
     try { paint(JSON.parse(cached)); } catch { /* fall through to spinner */ }

@@ -15,7 +15,7 @@ One question at a time. Wait for the answer, reflect it back in a line, then mov
 7. **Audience** — "Target audience in one sentence."
 8. **Competitors** — up to five handles or URLs to watch. Empty is fine.
 
-Agency mode: this is the CLIENT's brand, not the agency's. Ask in those terms.
+This workspace is ONE CreatorOS API key, one brand. If the human runs several brands (e.g. an agency), each has its own workspace: interview for THIS one only, in its own terms.
 
 ## Write the file
 

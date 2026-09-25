@@ -17,7 +17,8 @@
 import { CreatorOSClient, isValidKeyShape } from '../client/client.js';
 import { loadConfig } from '../config/socialAgentsConfig.js';
 import { resolveApiKey } from '../config/credentials.js';
-import { migrateLegacyWorkspace, socialAgentsPaths } from '../paths.js';
+import { socialAgentsPaths } from '../paths.js';
+import { resolveWorkerRoot } from '../workspaces.js';
 import { JsonlStore } from '../storage/jsonlStore.js';
 import { loadWorkerAutomations, type WorkerAutomation } from './automations.js';
 import { nextRun } from './schedule.js';
@@ -28,11 +29,13 @@ const TICK_MS = 30_000;
 const RETRY_DELAY_MS = 60_000;
 
 async function main(): Promise<void> {
-  const root = process.cwd();
-  migrateLegacyWorkspace(root);
+  const root = await resolveWorkerRoot(process.cwd()).catch((error: Error) => {
+    console.error(`worker: ${error.message}`);
+    process.exit(1);
+  });
   const paths = socialAgentsPaths(root);
   const config = await loadConfig(paths.configJson);
-  const apiKey = await resolveApiKey().catch((error: Error) => {
+  const apiKey = await resolveApiKey(config?.workspaceId).catch((error: Error) => {
     console.error(`worker: ${error.message}`);
     process.exit(1);
   });
@@ -43,6 +46,14 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   const client = new CreatorOSClient({ apiKey });
+  // The key must be THIS workspace's, or the worker would act on another brand.
+  if (config?.workspaceId) {
+    const me = await client.getMe().catch(() => null);
+    if (me && me.workspace?.id !== config.workspaceId) {
+      console.error(`worker: CREATOROS_API_KEY belongs to "${me.workspace?.name ?? 'another workspace'}", not "${config.workspaceName ?? config.workspaceId}". Exiting.`);
+      process.exit(1);
+    }
+  }
   const store = new JsonlStore(root);
   const startedAt = new Date().toISOString();
 

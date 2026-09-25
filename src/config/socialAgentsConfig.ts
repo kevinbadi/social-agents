@@ -70,14 +70,14 @@ export interface RailwayConfig {
 
 export interface SocialAgentsConfig {
   version: 1;
-  /** Agency running client brands, or a creator running their own. */
-  mode?: 'creator' | 'agency';
   automationTarget: AutomationTarget;
   timezone: string;
   worker?: WorkerConfig;
   railway?: RailwayConfig;
-  /** The CreatorOS workspace the API key is pinned to (from /v1/me). */
+  /** The CreatorOS workspace this folder runs (from /v1/me); its key is saved under this id. */
   workspaceId?: string;
+  /** The CreatorOS workspace's name, shown wherever workspaces are listed. */
+  workspaceName?: string;
   brain?: BrainSettings;
   funnel?: FunnelConfig;
   engagementAgent?: EngagementAgentConfig;

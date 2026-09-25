@@ -8,8 +8,6 @@
  * CI terminals get a plain-text fallback.
  */
 
-import { detectBrain, type BrainStatus } from '../util/brain.js';
-
 type Rgb = [number, number, number];
 
 const FONT: Record<string, string[]> = {
@@ -258,66 +256,14 @@ export async function showChecklist(sections: ChecklistSection[], heading: strin
   }
 }
 
-// Claude's terracotta, flanked by Social Agents amber — the link bar sweeps across it.
-const CLAUDE_STOPS: Rgb[] = [
-  [255, 176, 0],
-  [230, 150, 100],
-  [217, 119, 87],
-];
-const CLAUDE_ORANGE = fg([217, 119, 87]);
-
-/**
- * The brain hookup: an energy link draws from SOCIAL AGENTS to CLAUDE, then
- * resolves to the actually-detected auth status.
- */
-export async function showBrainLink(status: BrainStatus): Promise<void> {
-  const stdout = process.stdout;
-  const label =
-    status === 'plan'
-      ? 'connected — thinking on your Claude plan, no API key needed'
-      : status === 'api-key'
-        ? 'connected — thinking via your API key'
-        : status === 'custom'
-          ? 'connected — thinking via your configured model API'
-          : 'not detected — fine: the setup form needs no AI; your agents\' chat comes after';
-  if (!isFancy()) {
-    console.log(`Claude: ${label}`);
-    return;
-  }
-  const SEGMENTS = 26;
-  stdout.write('\x1b[?25l');
-  try {
-    for (let i = 0; i <= SEGMENTS; i++) {
-      let bar = '';
-      for (let s = 0; s < SEGMENTS; s++) {
-        if (s < i) {
-          const head = i - s <= 2 && i < SEGMENTS;
-          bar += head ? `${fg([255, 255, 255])}━` : `${fg(gradientAt(CLAUDE_STOPS, s / SEGMENTS))}━`;
-        } else {
-          bar += `${DIM}─${RESET}`;
-        }
-      }
-      stdout.write(`\r  ${SILVER}SOCIAL AGENTS${RESET} ${bar}${RESET} ${CLAUDE_ORANGE}CLAUDE${RESET}`);
-      await sleep(26);
-    }
-    await sleep(180);
-    stdout.write('\n');
-    const mark = status === 'missing' ? `${DIM}○${RESET}` : `${CYAN}✔${RESET}`;
-    stdout.write(`  ${mark} ${SILVER}Claude${RESET}${DIM} ${label}${RESET}\n\n`);
-    await sleep(500);
-  } finally {
-    stdout.write('\x1b[?25h');
-  }
-}
-
 /**
  * The full first-run sequence: CreatorOS animation → Social Agents animation →
- * Claude brain link → capability checkmarks. Runs once, right before the
- * onboarding interview.
+ * capability checkmarks. Runs once, right before the onboarding interview.
+ * No AI brand here on purpose: any agent opened in the repo can drive
+ * Social Agents through CLAUDE.md and the skills.
  */
 export async function showIntro(): Promise<void> {
   await showWordmark('CREATOR OS', 'the operating system for social media', CREATOROS_STOPS);
   await showWordmark('SOCIAL AGENTS', 'your CreatorOS agents · posts · replies · reports', SOCIAL_AGENTS_STOPS);
-  await showBrainLink(detectBrain());
   await showChecklist(SOCIAL_AGENTS_CAPABILITY_SECTIONS, 'what Social Agents run for you');
 }

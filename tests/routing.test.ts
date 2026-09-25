@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { routeArgs, usage } from '../src/index.js';
+import { requestedWorkspace, routeArgs, usage } from '../src/index.js';
 
 describe('arg routing', () => {
   it('routes `creatoros social-agents`', () => {
@@ -30,8 +30,21 @@ describe('arg routing', () => {
     expect(routeArgs(['social-agents'])).toBe('usage');
   });
 
+  it('routes `creatoros add` (another API key = another workspace)', () => {
+    expect(routeArgs(['creatoros', 'add'])).toBe('add');
+  });
+
+  it('reads the workspace to open from the args, then SOCIAL_AGENTS_WORKSPACE', () => {
+    expect(requestedWorkspace(['creatoros', 'social-agents', 'acme-fitness'], {})).toBe('acme-fitness');
+    expect(requestedWorkspace(['creatoros', 'social', 'agents', 'Acme', 'Fitness'], {})).toBe('Acme Fitness');
+    expect(requestedWorkspace(['creatoros', 'social-agents'], { SOCIAL_AGENTS_WORKSPACE: 'bolt' })).toBe('bolt');
+    expect(requestedWorkspace(['creatoros', 'social-agents'], {})).toBeUndefined();
+    expect(requestedWorkspace(['creatoros', 'dashboard'], {})).toBeUndefined();
+  });
+
   it('usage mentions both invocations', () => {
     expect(usage()).toContain('creatoros social-agents');
     expect(usage()).toContain('creatoros dashboard');
+    expect(usage()).toContain('creatoros add');
   });
 });

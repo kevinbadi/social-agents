@@ -63,7 +63,8 @@ import {
   summarizeActivity,
   type ActivityEntry,
 } from '../src/util/activityLog.js';
-import { migrateLegacyWorkspace, socialAgentsPaths } from '../src/paths.js';
+import { socialAgentsPaths } from '../src/paths.js';
+import { listWorkspaces, migrateToWorkspaces, type WorkspaceEntry } from '../src/workspaces.js';
 import { sanitize } from '../src/util/sanitize.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -108,21 +109,40 @@ export function openBrowser(url: string): void {
   }
 }
 
-/** Session state resolved once at boot; the dashboard reflects it honestly. */
+/**
+ * One session per workspace (one CreatorOS API key = one set of socials).
+ * Every cache lives on the session, so workspaces never see each other's
+ * data. Resolved lazily on first request; the dashboard reflects it honestly.
+ */
 interface Session {
+  workspace: WorkspaceEntry | null;
   workspaceRoot: string;
   client: CreatorOSClient | null;
   config: SocialAgentsConfig | null;
   brain: BrainConfig | null;
+  refreshedAt: number;
+  cache: {
+    cred?: { at: number; result: { present: boolean; valid: boolean; maskedKey?: string; error?: string } };
+    cronList?: { at: number; output: string; ok: boolean };
+    cloud?: { at: number; funnels: LiveFunnel[]; statsById: Map<string, FlowStats>; runs: FlowRun[] };
+    worker?: { at: number; state: WorkerState };
+    railway?: { at: number; deploy: RailwayDeployStatus | null };
+  };
 }
 
-async function loadSession(workspaceRoot: string): Promise<Session> {
+/** A workspace's key; a stray sk_ key or none at all renders the connect state. */
+async function clientFor(config: SocialAgentsConfig | null): Promise<CreatorOSClient | null> {
+  const apiKey = await resolveApiKey(config?.workspaceId).catch(() => null);
+  return apiKey ? new CreatorOSClient({ apiKey }) : null;
+}
+
+async function loadSession(workspace: WorkspaceEntry | null, fallbackRoot: string): Promise<Session> {
+  const workspaceRoot = workspace?.root ?? fallbackRoot;
   const paths = socialAgentsPaths(workspaceRoot);
-  const apiKey = await resolveApiKey();
-  const client = apiKey ? new CreatorOSClient({ apiKey }) : null;
   const config = existsSync(paths.configJson) ? await loadConfig(paths.configJson) : null;
+  const client = workspace ? await clientFor(config) : null;
   const brain = await hydrateBrain(config?.brain ?? undefined);
-  return { workspaceRoot, client, config, brain };
+  return { workspace, workspaceRoot, client, config, brain, refreshedAt: Date.now(), cache: {} };
 }
 
 /**
@@ -130,20 +150,16 @@ async function loadSession(workspaceRoot: string): Promise<Session> {
  * writes social-agents.json (worker.url added after boot → "unreachable forever"
  * until restart). It's a tiny local file — re-read it per request, 3s TTL.
  */
-let sessionRefreshedAt = 0;
 async function refreshSession(session: Session): Promise<void> {
-  if (Date.now() - sessionRefreshedAt < 3_000) return;
-  sessionRefreshedAt = Date.now();
+  if (Date.now() - session.refreshedAt < 3_000) return;
+  session.refreshedAt = Date.now();
   try {
     const paths = socialAgentsPaths(session.workspaceRoot);
     const config = existsSync(paths.configJson) ? await loadConfig(paths.configJson) : null;
     const brainChanged = JSON.stringify(config?.brain) !== JSON.stringify(session.config?.brain);
     session.config = config;
     if (brainChanged) session.brain = await hydrateBrain(config?.brain ?? undefined);
-    if (!session.client) {
-      const apiKey = await resolveApiKey();
-      if (apiKey) session.client = new CreatorOSClient({ apiKey });
-    }
+    if (!session.client && session.workspace) session.client = await clientFor(config);
   } catch {
     // a malformed config mid-edit keeps the last good session
   }
@@ -153,29 +169,42 @@ async function refreshSession(session: Session): Promise<void> {
 /* /api/health — "is my agent working?" in one payload                 */
 /* ------------------------------------------------------------------ */
 
-// Credential checks hit the real API; cache for 60s so the UI can poll.
-let credCache: { at: number; result: { present: boolean; valid: boolean; maskedKey?: string; error?: string } } | null = null;
+// Credential checks hit the real API; cached 60s per workspace so the UI can poll.
 
 async function healthPayload(session: Session): Promise<unknown> {
   const paths = socialAgentsPaths(session.workspaceRoot);
 
-  if (!credCache || Date.now() - credCache.at > 60_000) {
+  const cached = session.cache.cred;
+  if (!cached || Date.now() - cached.at > 60_000) {
     if (!session.client) {
-      credCache = { at: Date.now(), result: { present: false, valid: false } };
+      session.cache.cred = { at: Date.now(), result: { present: false, valid: false } };
     } else {
       try {
-        const valid = await session.client.validateKey();
-        credCache = {
+        const me = await session.client.getMe().catch((error: { status?: number }) => {
+          if (error.status === 401 || error.status === 403) return null;
+          throw error;
+        });
+        // The key must belong to THIS workspace, or it would act on another brand.
+        const expected = session.config?.workspaceId;
+        const mismatch = Boolean(me && expected && me.workspace?.id !== expected);
+        const valid = Boolean(me) && !mismatch;
+        session.cache.cred = {
           at: Date.now(),
           result: {
             present: true,
             valid,
             maskedKey: session.client.maskedKey,
-            ...(valid ? {} : { error: 'CreatorOS rejected the key. Copy it again from https://www.creatoros.ca/ (Settings, API keys) or run `npx @creatoros/cli init`.' }),
+            ...(valid
+              ? {}
+              : {
+                  error: mismatch
+                    ? `This key belongs to "${me?.workspace?.name ?? 'another workspace'}", not this workspace. Re-add it with \`npm start creatoros add\`.`
+                    : 'CreatorOS rejected the key. Copy it again from https://www.creatoros.ca/ (Settings, API keys) or run `npx @creatoros/cli init`.',
+                }),
           },
         };
       } catch (error) {
-        credCache = {
+        session.cache.cred = {
           at: Date.now(),
           result: { present: true, valid: false, maskedKey: session.client.maskedKey, error: (error as Error).message },
         };
@@ -208,7 +237,7 @@ async function healthPayload(session: Session): Promise<unknown> {
 
   return {
     now: new Date().toISOString(),
-    credentials: credCache.result,
+    credentials: session.cache.cred!.result,
     configLoaded: session.config !== null,
     files,
     brain: { label: describeBrain(session.config?.brain), ready: session.brain !== null },
@@ -225,10 +254,6 @@ async function healthPayload(session: Session): Promise<unknown> {
 /* the expensive pieces (CLI spawn, funnel-log fetches) are cached.    */
 /* ------------------------------------------------------------------ */
 
-let cronListCache: { at: number; output: string; ok: boolean } | null = null;
-let cloudCache: { at: number; funnels: LiveFunnel[]; statsById: Map<string, FlowStats>; runs: FlowRun[] } | null = null;
-let workerCache: { at: number; state: WorkerState } | null = null;
-let railwayCache: { at: number; deploy: RailwayDeployStatus | null } | null = null;
 
 /**
  * ALL agent activity, one stream. On the Railway pathway the WORKER's log
@@ -238,7 +263,7 @@ let railwayCache: { at: number; deploy: RailwayDeployStatus | null } | null = nu
  */
 async function allActivity(session: Session): Promise<{ entries: ActivityEntry[]; source: 'railway' | 'local' }> {
   const local = await readActivity(session.workspaceRoot);
-  const worker = await fetchWorkerCached(session.config);
+  const worker = await fetchWorkerCached(session);
   const railwayPrimary = session.config?.automationTarget === 'railway' && worker.reachable;
   if (railwayPrimary) {
     return { entries: mergeActivity(worker.activity, local), source: 'railway' };
@@ -250,19 +275,23 @@ async function allActivity(session: Session): Promise<{ entries: ActivityEntry[]
 }
 
 /** Worker status — env overrides config so secrets can stay out of files. */
-async function fetchWorkerCached(config: SocialAgentsConfig | null): Promise<WorkerState> {
-  if (workerCache && Date.now() - workerCache.at < 15_000) return workerCache.state;
+async function fetchWorkerCached(session: Session): Promise<WorkerState> {
+  const config = session.config;
+  const cached = session.cache.worker;
+  if (cached && Date.now() - cached.at < 15_000) return cached.state;
   const url = process.env.SOCIAL_AGENTS_WORKER_URL ?? process.env.MIDAS_WORKER_URL ?? config?.worker?.url;
   const token = process.env.SOCIAL_AGENTS_WORKER_TOKEN ?? process.env.MIDAS_WORKER_TOKEN ?? config?.worker?.token;
   const state = await fetchWorkerState(url, token);
-  workerCache = { at: Date.now(), state };
+  session.cache.worker = { at: Date.now(), state };
   return state;
 }
 
-async function fetchRailwayCached(config: SocialAgentsConfig | null): Promise<RailwayDeployStatus | null> {
-  if (railwayCache && Date.now() - railwayCache.at < 60_000) return railwayCache.deploy;
+async function fetchRailwayCached(session: Session): Promise<RailwayDeployStatus | null> {
+  const config = session.config;
+  const cached = session.cache.railway;
+  if (cached && Date.now() - cached.at < 60_000) return cached.deploy;
   const deploy = await fetchRailwayDeploy(process.env.RAILWAY_API_TOKEN, config?.railway?.serviceId);
-  railwayCache = { at: Date.now(), deploy };
+  session.cache.railway = { at: Date.now(), deploy };
   return deploy;
 }
 
@@ -281,8 +310,9 @@ function asArray(body: unknown): Record<string, unknown>[] {
 
 const str = (v: unknown): string | undefined => (typeof v === 'string' && v ? v : undefined);
 
-async function fetchCloudState(session: Session): Promise<NonNullable<typeof cloudCache>> {
-  if (cloudCache && Date.now() - cloudCache.at < 30_000) return cloudCache;
+async function fetchCloudState(session: Session): Promise<NonNullable<Session['cache']['cloud']>> {
+  const cached = session.cache.cloud;
+  if (cached && Date.now() - cached.at < 30_000) return cached;
   const funnels: LiveFunnel[] = [];
   const statsById = new Map<string, FlowStats>();
   const runs: FlowRun[] = [];
@@ -338,27 +368,29 @@ async function fetchCloudState(session: Session): Promise<NonNullable<typeof clo
       // no cloud automations reachable — local flows still render
     }
   }
-  cloudCache = { at: Date.now(), funnels, statsById, runs };
-  return cloudCache;
+  session.cache.cloud = { at: Date.now(), funnels, statsById, runs };
+  return session.cache.cloud;
 }
 
 async function automationsPayload(session: Session): Promise<unknown> {
   const config = session.config;
   const { entries } = await allActivity(session);
 
-  if (!cronListCache || Date.now() - cronListCache.at > 30_000) {
+  let cronList = session.cache.cronList;
+  if (!cronList || Date.now() - cronList.at > 30_000) {
     const result = await verifyAutomations(session.workspaceRoot, config?.automationTarget ?? 'local');
-    cronListCache = { at: Date.now(), output: result.stdout.trim() || result.stderr.trim(), ok: result.code === 0 };
+    cronList = { at: Date.now(), output: result.stdout.trim() || result.stderr.trim(), ok: result.code === 0 };
+    session.cache.cronList = cronList;
   }
   const cloud = await fetchCloudState(session);
   const workerAutomations = await loadWorkerAutomations(session.workspaceRoot);
-  const worker = await fetchWorkerCached(config);
-  const deploy = await fetchRailwayCached(config);
+  const worker = await fetchWorkerCached(session);
+  const deploy = await fetchRailwayCached(session);
 
   const flows = [
     ...funnelFlows(config, cloud.funnels, cloud.statsById),
     ...engagementFlows(config, entries),
-    ...cronFlows(cronListCache.ok ? cronListCache.output : '', config, entries),
+    ...cronFlows(cronList.ok ? cronList.output : '', config, entries),
     ...workerCronFlows(workerAutomations, worker.runs),
   ];
 
@@ -381,8 +413,8 @@ async function automationsPayload(session: Session): Promise<unknown> {
     cloudScoped: session.client !== null,
     flows,
     runs: mergeRuns(localRuns, [...cloud.runs, ...workerFlowRuns(worker.runs)]),
-    crons: { ok: cronListCache.ok, output: cronListCache.output },
-    catalog: workflowCatalog(cronListCache.ok ? cronListCache.output : ''),
+    crons: { ok: cronList.ok, output: cronList.output },
+    catalog: workflowCatalog(cronList.ok ? cronList.output : ''),
     worker: {
       configured: worker.configured || workerAutomations.length > 0,
       reachable: worker.reachable,
@@ -457,7 +489,7 @@ async function understandingPayload(session: Session): Promise<unknown> {
     },
     kpis: deriveKpis(config, summary),
     mission: MISSION_PILLARS,
-    mode: config?.mode ?? 'creator',
+    workspaceName: config?.workspaceName ?? null,
     systemPrompt: buildSystemPrompt(config),
     sources: await Promise.all([
       source('brand pack (voice, offers, audience)', paths.brandMd, '/brand'),
@@ -669,21 +701,51 @@ export interface DashboardHandle {
   close: () => Promise<void>;
 }
 
+/**
+ * The dashboard serves every workspace under `repoRoot/workspaces/`. Each
+ * API call names one with `?workspace=<slug>` (default: the first), and gets
+ * only that workspace's data — the UI draws the division.
+ */
 export async function startDashboard(
-  workspaceRoot: string = REPO_ROOT,
+  repoRoot: string = REPO_ROOT,
   port: number = Number(process.env.SOCIAL_AGENTS_DASHBOARD_PORT ?? process.env.MIDAS_DASHBOARD_PORT) || DEFAULT_PORT,
 ): Promise<DashboardHandle> {
-  migrateLegacyWorkspace(workspaceRoot);
-  const session = await loadSession(workspaceRoot);
+  migrateToWorkspaces(repoRoot);
+  const sessions = new Map<string, Session>();
+  let listed: { at: number; workspaces: WorkspaceEntry[] } | null = null;
+  const workspacesNow = async (): Promise<WorkspaceEntry[]> => {
+    // Onboarding or `npm start creatoros add` can add one while we run.
+    if (!listed || Date.now() - listed.at > 3_000) listed = { at: Date.now(), workspaces: await listWorkspaces(repoRoot) };
+    return listed.workspaces;
+  };
+  const sessionFor = async (slug: string | null): Promise<Session> => {
+    const workspaces = await workspacesNow();
+    const workspace = (slug ? workspaces.find((w) => w.slug === slug) : undefined) ?? workspaces[0] ?? null;
+    const key = workspace?.slug ?? '';
+    let session = sessions.get(key);
+    if (!session) {
+      session = await loadSession(workspace, repoRoot);
+      sessions.set(key, session);
+    }
+    return session;
+  };
 
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
     const route = `${req.method} ${url.pathname}`;
 
     const handle = async (): Promise<void> => {
+      if (route === 'GET /api/workspaces') {
+        const workspaces = await workspacesNow();
+        return json(res, 200, {
+          workspaces: workspaces.map(({ slug, name, workspaceId }) => ({ slug, name, workspaceId })),
+          default: workspaces[0]?.slug ?? null,
+        });
+      }
+      const session = url.pathname.startsWith('/api/') ? await sessionFor(url.searchParams.get('workspace')) : null!;
       // Pick up config changes (worker.url after provisioning, etc.)
       // without a restart.
-      if (url.pathname.startsWith('/api/')) await refreshSession(session);
+      if (session) await refreshSession(session);
       // ---- JSON API ----
       if (route === 'GET /api/health') return json(res, 200, await healthPayload(session));
       if (route === 'GET /api/activity') {

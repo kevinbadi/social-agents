@@ -20,64 +20,51 @@ async function tmpStatePath(): Promise<string> {
 }
 
 describe('interview persistence & resume', () => {
-  it('is mode, then the CreatorOS key, then the handoff — no AI, brand, or infrastructure step in the form', () => {
+  it('is the CreatorOS key(s), then the handoff — no AI, brand, creator/agency, or infrastructure step', () => {
     const state = emptyState();
-    expect(INTERVIEW_STEPS).toEqual(['mode', 'key', 'finish']);
-    expect(nextStep(state)).toBe('mode');
+    expect(INTERVIEW_STEPS).toEqual(['keys', 'finish']);
+    expect(nextStep(state)).toBe('keys');
     expect(isInterviewComplete(state)).toBe(false);
-    markStepDone(state, 'mode');
-    expect(nextStep(state)).toBe('key');
-    markStepDone(state, 'key');
+    markStepDone(state, 'keys');
     expect(nextStep(state)).toBe('finish');
   });
 
-  it('records agency mode with client labels but never the keys themselves', async () => {
+  it('records each key\'s workspace by id, name, and folder — never the key itself', async () => {
     const path = await tmpStatePath();
     const state = emptyState();
-    state.answers.mode = 'agency';
-    state.answers.clientLabels = ['Acme Fitness', 'Bolt Coffee'];
-    markStepDone(state, 'mode');
+    state.answers.keyCount = 2;
+    state.answers.workspaces = [
+      { workspaceId: 'ws-1', name: 'Acme Fitness', slug: 'acme-fitness' },
+      { workspaceId: 'ws-2', name: 'Bolt Coffee', slug: 'bolt-coffee' },
+    ];
+    markStepDone(state, 'keys');
     await saveState(path, state);
     const { readFile } = await import('node:fs/promises');
     const raw = await readFile(path, 'utf8');
     expect(raw).toContain('Acme Fitness');
-    expect(raw).not.toMatch(/cos_live_[A-Za-z0-9_-]{32}|sk_[0-9a-f]/i);
+    expect(raw).not.toMatch(/cos_live_|sk_[0-9a-f]/i);
     const resumed = await loadState(path);
-    expect(resumed.answers.mode).toBe('agency');
-    expect(nextStep(resumed)).toBe('key');
+    expect(resumed.answers.workspaces?.map((w) => w.slug)).toEqual(['acme-fitness', 'bolt-coffee']);
+    expect(nextStep(resumed)).toBe('finish');
   });
 
-  it('persists every step and resumes from the next one', async () => {
+  it('resumes mid-keys: the count and the keys already validated survive a restart', async () => {
     const path = await tmpStatePath();
     const state = emptyState();
-    markStepDone(state, 'mode');
-    markStepDone(state, 'key');
-    // The brand pack is written by the agent in chat, but the state file
-    // still carries it when present.
-    state.answers.brand = {
-      about: 'Fitness coaching',
-      products: [{ link: 'https://coach.example/buy', description: '1:1 programs' }],
-      voiceAdjectives: ['direct', 'warm', 'practical'],
-      voiceNever: 'corporate',
-      emojiPolicy: 'none',
-      hashtagPolicy: 'none',
-      audience: 'busy parents',
-      competitors: ['@bigcoach'],
-    };
+    state.answers.keyCount = 3;
+    state.answers.workspaces = [{ workspaceId: 'ws-1', name: 'Acme Fitness', slug: 'acme-fitness' }];
     await saveState(path, state);
-
     // Simulate the process being killed and re-run.
     const resumed = await loadState(path);
-    expect(resumed.completed).toEqual(['mode', 'key']);
-    expect(nextStep(resumed)).toBe('finish');
-    expect(resumed.answers.brand?.products[0]?.link).toBe('https://coach.example/buy');
+    expect(nextStep(resumed)).toBe('keys');
+    expect(resumed.answers.keyCount).toBe(3);
+    expect(resumed.answers.workspaces).toHaveLength(1);
   });
 
-  it('brand, pathway, profiles, automations, and AI are all conversations, not form steps', () => {
-    for (const notAStep of ['funnel', 'autoReplies', 'brain', 'brand', 'pathway', 'profiles']) {
+  it('brand, pathway, profiles, automations, AI, and creator/agency are conversations, not form steps', () => {
+    for (const notAStep of ['funnel', 'autoReplies', 'brain', 'brand', 'pathway', 'profiles', 'mode']) {
       expect(INTERVIEW_STEPS as readonly string[]).not.toContain(notAStep);
     }
-    expect(INTERVIEW_STEPS.indexOf('key')).toBe(1);
   });
 
   it('is complete only after every step, in the spec order', () => {
@@ -141,14 +128,10 @@ describe('brand pack rendering', () => {
   });
 
   it('the setup prompt hands off automations as a menu — it never pre-commits any', () => {
-    const state: InterviewState = {
-      completed: [],
-      answers: {
-        brand: { ...brand },
-        pathway: { automationTarget: 'railway', timezone: 'America/Toronto' },
-      },
-    };
-    const prompt = renderSetupPrompt(state);
+    const prompt = renderSetupPrompt({
+      brandDone: true,
+      pathway: { automationTarget: 'railway', timezone: 'America/Toronto' },
+    });
     expect(prompt).toContain('social-agents/social-agents.json');
     expect(prompt).toContain('railway');
     // brand already on disk → no interview task
@@ -163,10 +146,7 @@ describe('brand pack rendering', () => {
   });
 
   it('with no brand pack yet, the agent is told to run the brand interview first, then ask about the pathway', () => {
-    const prompt = renderSetupPrompt({
-      completed: ['mode', 'key', 'finish'],
-      answers: { mode: 'creator', pathway: { automationTarget: 'local', timezone: 'America/Toronto' } },
-    });
+    const prompt = renderSetupPrompt({ pathway: { automationTarget: 'local', timezone: 'America/Toronto' } });
     const lines = prompt.split('\n');
     expect(lines.find((l) => l.startsWith('1. '))).toContain('brand-interview');
     expect(prompt).toContain('social-agents/BRAND.md');
@@ -177,55 +157,42 @@ describe('brand pack rendering', () => {
 
   it('a railway pathway without a deployed worker adds the right deploy task', () => {
     // Token saved → the AGENT provisions; the user never touches Railway.
-    const withToken = renderSetupPrompt({
-      completed: [],
-      answers: { pathway: { automationTarget: 'railway', timezone: 'America/Toronto', workerToken: 'tok', railwayTokenSaved: true } },
-    });
+    const withToken = renderSetupPrompt({ pathway: { automationTarget: 'railway', timezone: 'America/Toronto', workerToken: 'tok', railwayTokenSaved: true } });
     expect(withToken).toContain('Provision my Railway worker for me');
     expect(withToken).toContain('provision-railway');
     // No spend-limit gating anywhere — the user knows how their credentials work.
     expect(withToken).not.toMatch(/spend limit/i);
     // Credentials already collected → the agent is told NOT to re-ask.
     const fullyCollected = renderSetupPrompt({
-      completed: [],
-      answers: {
-        pathway: {
-          automationTarget: 'railway',
-          timezone: 'America/Toronto',
-          workerToken: 'tok',
-          railwayTokenSaved: true,
-          aiCredentialSaved: true,
-        },
+      pathway: {
+        automationTarget: 'railway',
+        timezone: 'America/Toronto',
+        workerToken: 'tok',
+        railwayTokenSaved: true,
+        aiCredentialSaved: true,
       },
     });
     expect(fullyCollected).toContain('ALREADY SAVED');
     expect(fullyCollected).toContain('do NOT ask me for it again');
     expect(fullyCollected).not.toMatch(/spend limit/i);
     // No token → manual walkthrough, with the token shortcut offered.
-    const withoutToken = renderSetupPrompt({
-      completed: [],
-      answers: { pathway: { automationTarget: 'railway', timezone: 'America/Toronto', workerToken: 'tok' } },
-    });
+    const withoutToken = renderSetupPrompt({ pathway: { automationTarget: 'railway', timezone: 'America/Toronto', workerToken: 'tok' } });
     expect(withoutToken).toContain('social-agents/RAILWAY.md');
     expect(withoutToken).toContain('worker.url');
     // Worker already live → no deploy task at all.
-    const withWorker = renderSetupPrompt({
-      completed: [],
-      answers: { pathway: { automationTarget: 'railway', timezone: 'America/Toronto', workerUrl: 'https://w.up.railway.app' } },
-    });
+    const withWorker = renderSetupPrompt({ pathway: { automationTarget: 'railway', timezone: 'America/Toronto', workerUrl: 'https://w.up.railway.app' } });
     expect(withWorker).not.toContain('social-agents/RAILWAY.md');
     expect(withWorker).not.toContain('Provision my Railway worker');
   });
 
-  it('CLAUDE.md briefs any agent: files first, init prompt, parallel-safe sessions, no secrets', () => {
+  it('a workspace CLAUDE.md briefs any agent: one workspace only, files first, parallel-safe, no secrets', () => {
     const md = renderClaudeMd({
-      completed: [],
-      answers: {
-        mode: 'creator',
-        brand: { ...brand },
-        pathway: { automationTarget: 'railway', timezone: 'America/Toronto' },
-      },
+      workspaceName: 'Acme Fitness',
+      pathway: { automationTarget: 'railway', timezone: 'America/Toronto' },
     });
+    expect(md).toContain('# Social Agents: Acme Fitness');
+    expect(md).toMatch(/ONE CreatorOS workspace/);
+    expect(md).toMatch(/"Acme Fitness" only/);
     expect(md).toContain('social-agents/social-agents.json');
     expect(md).toContain('social-agents/BRAND.md');
     expect(md).toContain('social-agents/PROFILES.md');
@@ -233,7 +200,7 @@ describe('brand pack rendering', () => {
     expect(md).toContain('brand-interview');
     expect(md).toContain('railway · timezone America/Toronto');
     expect(md).toMatch(/parallel-safe/i);
-    expect(md).toMatch(/never print them/i);
+    expect(md).toMatch(/never print it/i);
     expect(md).not.toMatch(/cos_live_[A-Za-z0-9_-]{32}|sk_[0-9a-f]/i); // never a key in a committed-adjacent file
   });
 

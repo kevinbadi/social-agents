@@ -2,7 +2,8 @@
  * Pure renderers for the files Social Agents read forever after. Everything
  * Social Agents write later — captions, descriptions, CTAs — flows from BRAND.md.
  */
-import type { BrandAnswers, InterviewState, ProductOffer } from './state.js';
+import type { BrandAnswers, PathwayAnswers, ProductOffer } from './state.js';
+import type { WorkspaceEntry } from '../workspaces.js';
 import type { SocialAccount } from '../client/types.js';
 import { platformLabel } from '../client/platformMatrix.js';
 
@@ -129,29 +130,35 @@ export function describeWorkerHealth(health: {
  * pathway — every value they need is filled in (worker token generated,
  * timezone from their answer), so the deploy is copy-paste.
  */
-export function renderRailwayGuide(opts: { timezone: string; workerToken: string }): string {
+export function renderRailwayGuide(opts: { timezone: string; workerToken: string; workspaceSlug?: string }): string {
+  const slug = opts.workspaceSlug;
   return `# Deploy the Social Agents worker on Railway
 
 One always-on service runs ALL your automations — your machine can be off.
 Ten minutes, one time. Every value below is already filled in for you.
 
-Deploy with the Railway CLI from THIS folder — a GitHub deploy can't work
-here, because your workspace (social-agents/) is gitignored and never reaches
-GitHub. The CLI uploads the folder itself.
+Deploy with the Railway CLI from the REPO ROOT${slug ? ' (two folders up from this workspace: `cd ../..`)' : ''} —
+that's where the worker's code and Dockerfile.worker live. A GitHub deploy
+can't work here, because your workspaces are gitignored and never reach
+GitHub. The CLI uploads the folder itself.${slug ? `
+
+One worker runs ONE workspace: this one, \`${slug}\`. Use this workspace's own
+CreatorOS API key below; each workspace that wants a cloud worker gets its own.` : ''}
 
 ## 1. Create the project and set the variables
 
-From this folder:
+From the repo root:
 
 \`\`\`
 npx -y @railway/cli login
-npx -y @railway/cli init --name social-agents-worker
+npx -y @railway/cli init --name social-agents-${slug ?? 'worker'}
 npx -y @railway/cli variables \\
   --set "CREATOROS_API_KEY=<your cos_live_ key from https://www.creatoros.ca/, Settings, API keys>" \\
   --set "ANTHROPIC_API_KEY=<your Anthropic key — or set CLAUDE_CODE_OAUTH_TOKEN from claude setup-token instead>" \\
   --set "SOCIAL_AGENTS_WORKER_TOKEN=${opts.workerToken}" \\
   --set "TZ=${opts.timezone}" \\
-  --set "RAILWAY_DOCKERFILE_PATH=Dockerfile.worker" \\
+  --set "RAILWAY_DOCKERFILE_PATH=Dockerfile.worker" \\${slug ? `
+  --set "SOCIAL_AGENTS_WORKSPACE=${slug}" \\` : ''}
   --skip-deploys
 \`\`\`
 
@@ -164,14 +171,14 @@ npx -y @railway/cli up --detach --no-gitignore
 \`\`\`
 
 \`--no-gitignore\` is REQUIRED — without it Railway drops gitignored files,
-and social-agents/ (your config, skills, automations) is gitignored. The
+and your workspaces (config, skills, automations) are gitignored. The
 .railwayignore file keeps node_modules, .env, and logs out either way.
 
 ## 3. Expose and connect it
 
 1. \`npx -y @railway/cli domain\` — generates the public URL.
 2. Tell Social Agents in chat: "my worker is live at https://<that-domain>" — or paste it
-   into \`social-agents/social-agents.json\` under \`worker.url\` yourself.
+   into this workspace's \`social-agents/social-agents.json\` under \`worker.url\` yourself.
 3. Optional, for deploy status on the dashboard: set \`RAILWAY_API_TOKEN\` in the
    dashboard's environment and put the service id in \`social-agents.json\` → \`railway.serviceId\`.
 
@@ -186,33 +193,38 @@ them, sync the deployed worker with \`npx -y @railway/cli up --detach --no-gitig
 }
 
 /**
- * The repo-root CLAUDE.md, written when the form finishes. Any agent chat
- * opened in this folder — Claude Code, `social-agents`, several in parallel — reads
- * it automatically, so the handoff needs no AI wired into the form itself.
+ * A workspace's CLAUDE.md (and identical AGENTS.md), written when the form
+ * finishes. Any agent chat opened in the workspace folder — Claude Code,
+ * Codex, Cursor, \`social-agents\`, several in parallel — reads it
+ * automatically, so the handoff needs no AI wired into the form itself.
  */
-export function renderClaudeMd(state: InterviewState): string {
-  const pathway = state.answers.pathway;
-  const mode = state.answers.mode ?? 'creator';
-  return `# Social Agents: CreatorOS agents workspace
+export function renderClaudeMd(opts: { workspaceName: string; pathway?: PathwayAnswers }): string {
+  const pathway = opts.pathway;
+  return `# Social Agents: ${opts.workspaceName}
 
-Generated at onboarding — the form's answers live in the files below, never in
-any one chat. Sessions are parallel-safe: open as many agent chats here as you
-like; files are the source of truth, so re-read before you write.
+Generated at onboarding. This folder is ONE CreatorOS workspace: one API key,
+one set of connected socials, one brand. Everything you do here is for
+"${opts.workspaceName}" only. Other workspaces live beside this one in
+\`workspaces/\` and are none of this session's business.
 
-You are Social Agents, a team of CreatorOS agents. Speak as the team ("we", never "I"). You run this ${mode === 'agency' ? "agency's client brands" : "creator's brand"} on CreatorOS: posting at
+Files are the source of truth, never any one chat. Sessions are
+parallel-safe: open as many agent chats here as you like, and re-read before
+you write.
+
+You are Social Agents, a team of CreatorOS agents. Speak as the team ("we", never "I"). You run this brand on CreatorOS: posting at
 scale, automations, comment & DM replies, analytics.
 
 ## Read these first, every session
 
-1. \`social-agents/social-agents.json\` — config: mode, timezone, automation pathway, worker.
+1. \`social-agents/social-agents.json\` — config: workspace, timezone, automation pathway, worker.
 2. \`social-agents/BRAND.md\` — the brand pack. Every caption, description, and CTA flows from it.
-3. \`social-agents/PROFILES.md\` — the profile map. Posts target account IDs, never bare handles.
+3. \`social-agents/PROFILES.md\` — which socials are connected. Take account IDs from a fresh list_accounts.
 
 ## Not initialized yet?
 
-Onboarding is a two-question form (creator/agency + API key); the real
-briefing happens in chat. If \`social-agents/BRAND.md\` does not exist, your FIRST job is
-the brand interview — follow \`social-agents/skills/brand-interview/SKILL.md\`, write the
+Onboarding only collected the API key; the real briefing happens in chat.
+If \`social-agents/BRAND.md\` does not exist, your FIRST job is the brand
+interview — follow \`social-agents/skills/brand-interview/SKILL.md\`, write the
 file, and get sign-off before writing a single caption.
 \`social-agents/SETUP_PROMPT.md\` is the full initialization brief (brand, pathway,
 automation menu, analytics read). If its tasks haven't run yet, execute it.
@@ -229,8 +241,34 @@ automation menu, analytics read). If its tasks haven't run yet, execute it.
 
 - Automation pathway: ${pathway?.automationTarget ?? 'local'} · timezone ${pathway?.timezone ?? 'UTC'}.
 - Confirm anything that publishes, DMs strangers, or spends money BEFORE it goes live.
-- Credentials live in \`~/.social-agents/credentials.json\` — never print them and never copy them into this repo.
-- \`social-agents/\` is gitignored on purpose: it is the user's private workspace. So is this file.
+- This workspace's CreatorOS key is saved in \`~/.social-agents/credentials.json\` under \`workspaces\`, matched by \`workspaceId\` — never print it and never copy it into this repo.
+- \`workspaces/\` is gitignored on purpose: it is the user's private data. So is this file.
+`;
+}
+
+/**
+ * The repo-root CLAUDE.md / AGENTS.md: an index of the workspaces. An agent
+ * opened at the root picks one (or asks) and works inside that folder.
+ */
+export function renderRootIndexMd(workspaces: Array<Pick<WorkspaceEntry, 'slug' | 'name'>>): string {
+  const rows = workspaces.map((w) => `| ${w.name} | \`workspaces/${w.slug}/\` |`).join('\n');
+  return `# Social Agents
+
+This repo runs Social Agents, a team of CreatorOS agents. Speak as the team
+("we", never "I"). Each CreatorOS API key is its own workspace (one set of
+connected socials, one brand), in its own folder:
+
+| Workspace | Folder |
+|---|---|
+${rows}
+
+Work inside ONE workspace at a time. If the human hasn't said which, ask
+${workspaces.length === 1 ? '(there is only one right now, so use it)' : 'which one'}. Then read that folder's \`CLAUDE.md\` (or \`AGENTS.md\`)
+and follow it: its brand pack, profile map, config, and skills are all
+inside the folder, and paths in it are relative to it. Never carry a caption,
+account ID, or setting from one workspace into another.
+
+Adding a CreatorOS API key: \`npm start creatoros add\`.
 `;
 }
 
@@ -240,9 +278,9 @@ automation menu, analytics read). If its tasks haven't run yet, execute it.
  * materialized in social-agents/. Printed at the finish and saved to
  * social-agents/SETUP_PROMPT.md.
  */
-export function renderSetupPrompt(state: InterviewState): string {
-  const pathway = state.answers.pathway;
-  const brandDone = Boolean(state.answers.brand);
+export function renderSetupPrompt(opts: { pathway?: PathwayAnswers; brandDone?: boolean }): string {
+  const pathway = opts.pathway;
+  const brandDone = Boolean(opts.brandDone);
 
   const tasks: string[] = [];
   if (!brandDone) {

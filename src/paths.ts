@@ -10,6 +10,8 @@ export interface SocialAgentsPaths {
   root: string;
   /** Repo-root CLAUDE.md — the generated briefing any agent chat reads. */
   claudeMd: string;
+  /** Repo-root AGENTS.md — the same briefing, where Codex, Cursor and friends look. */
+  agentsMd: string;
   socialAgentsDir: string;
   brandMd: string;
   profilesMd: string;
@@ -28,6 +30,7 @@ export function socialAgentsPaths(root: string = process.cwd()): SocialAgentsPat
   return {
     root,
     claudeMd: join(root, 'CLAUDE.md'),
+    agentsMd: join(root, 'AGENTS.md'),
     socialAgentsDir,
     brandMd: join(socialAgentsDir, 'BRAND.md'),
     profilesMd: join(socialAgentsDir, 'PROFILES.md'),

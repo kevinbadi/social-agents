@@ -1,9 +1,13 @@
-# User artifacts — never committed (brand pack, profile map, configs, knowledge)
+# User artifacts — never committed. One folder per CreatorOS API key
+# (brand pack, profile map, config, knowledge, logs, content).
+workspaces/
+# Pre-workspace layout; moved into workspaces/ on first run
 social-agents/
 midas/
 
 # Generated at onboarding for the user's agent sessions — per-workspace, not repo docs
 /CLAUDE.md
+/AGENTS.md
 
 # CLI-compat workspace (skill shims for scheduled runs)
 creatoros/

@@ -11,18 +11,17 @@ describe('first-run intro', () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it('plays CreatorOS, Social Agents, the Claude brain link, then the capability checkmarks (plain fallback in non-TTY)', async () => {
+  it('plays CreatorOS, Social Agents, then the capability checkmarks (plain fallback in non-TTY)', async () => {
     await showIntro();
     const output = lines.join('\n');
     const creatorosAt = output.indexOf('CREATOR OS');
     const socialAgentsAt = output.indexOf('SOCIAL AGENTS');
-    const claudeAt = output.indexOf('Claude:');
     const checksAt = output.indexOf('✔');
     expect(creatorosAt).toBeGreaterThanOrEqual(0);
     expect(socialAgentsAt).toBeGreaterThan(creatorosAt);
-    expect(claudeAt).toBeGreaterThan(socialAgentsAt);
-    expect(checksAt).toBeGreaterThan(claudeAt);
-    expect(output).toMatch(/Claude: (connected|not found)/);
+    expect(checksAt).toBeGreaterThan(socialAgentsAt);
+    // Agent-agnostic: any AI agent in the repo drives Social Agents, so the intro names none.
+    expect(output).not.toMatch(/Claude/);
     // every capability in every section gets its checkmark line
     for (const section of SOCIAL_AGENTS_CAPABILITY_SECTIONS) {
       expect(output).toContain(section.heading);

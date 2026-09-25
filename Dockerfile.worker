@@ -3,17 +3,19 @@
 #
 # Railway setup (one time):
 #   1. New service from this repo; set Dockerfile path to Dockerfile.worker.
-#   2. Variables: CREATOROS_API_KEY (a cos_live_ key: creatoros.ca, Settings,
-#      API keys), optionally CREATOROS_API_URL (only if CreatorOS tells you
-#      the API moved), ANTHROPIC_API_KEY (or
+#   2. Variables: SOCIAL_AGENTS_WORKSPACE (the workspaces/<slug> folder this
+#      worker runs: one worker per workspace), CREATOROS_API_KEY (THAT
+#      workspace's cos_live_ key: creatoros.ca, Settings, API keys),
+#      optionally CREATOROS_API_URL (only if CreatorOS tells you the API
+#      moved), ANTHROPIC_API_KEY (or
 #      CLAUDE_CODE_OAUTH_TOKEN from `claude setup-token` to stay on a
 #      Claude plan), SOCIAL_AGENTS_WORKER_TOKEN (any long random string),
 #      TZ (e.g. America/Toronto — cron hours run in this zone).
 #   3. Set an Anthropic Console spend limit BEFORE first deploy.
-#   4. Networking → generate a public domain; put it in social-agents/social-agents.json
+#   4. Networking → generate a public domain; put it in that workspace's social-agents/social-agents.json
 #      as worker.url so the dashboard can poll /health and /runs.
 #
-# The workspace (social-agents/ config, skills, automations.json) ships in the
+# The workspaces (social-agents/ config, skills, automations.json) ship in the
 # image — redeploy on workspace changes, or mount a volume to skip that.
 
 FROM node:22-bookworm-slim

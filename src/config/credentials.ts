@@ -1,6 +1,7 @@
 /**
- * The API key never lands in any repo file. Interactive keys are persisted
- * to ~/.social-agents/credentials.json (mode 0600); CREATOROS_API_KEY always wins.
+ * API keys never land in any repo file. Interactive keys are persisted to
+ * ~/.social-agents/credentials.json (mode 0600), one per CreatorOS
+ * workspace. CREATOROS_API_KEY covers any workspace without a saved key.
  */
 import { mkdir, readFile, writeFile, chmod } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -32,29 +33,71 @@ async function readJson(path: string): Promise<Record<string, unknown> | null> {
   }
 }
 
-/**
- * Key resolution, first hit wins: CREATOROS_API_KEY, then our own
- * credentials file, then the CreatorOS CLI's config. A pre-CreatorOS
- * `sk_` key is skipped when a current key exists anywhere; when it is the
- * only key found, this throws with how to get a new one.
- */
-export async function resolveApiKey(): Promise<string | null> {
+/** One saved key per CreatorOS workspace. */
+export interface WorkspaceKey {
+  /** CreatorOS workspace id, from /v1/me. */
+  workspaceId: string;
+  name: string;
+  apiKey: string;
+}
+
+type Candidate = { key: string; source: string };
+
+async function candidates(workspaceId?: string): Promise<Candidate[]> {
   const ours = await readJson(credentialsPath());
   const cli = await readJson(creatorosCliConfigPath());
-  const candidates = [process.env.CREATOROS_API_KEY, ours?.apiKey, cli?.api_key]
-    .filter((key): key is string => typeof key === 'string' && key.trim().length > 0)
-    .map((key) => key.trim());
-  const current = candidates.find((key) => !isLegacyKey(key));
+  const saved = Array.isArray(ours?.workspaces) ? (ours.workspaces as WorkspaceKey[]) : [];
+  const forWorkspace = workspaceId ? saved.find((w) => w.workspaceId === workspaceId)?.apiKey : undefined;
+  return [
+    // A key saved for THIS workspace wins, so one exported env var can't
+    // hijack every workspace. The Railway worker has no saved keys: env.
+    { key: forWorkspace, source: '~/.social-agents/credentials.json' },
+    { key: process.env.CREATOROS_API_KEY, source: 'CREATOROS_API_KEY' },
+    { key: ours?.apiKey, source: '~/.social-agents/credentials.json' },
+    { key: cli?.api_key, source: '~/.creatoros/config.json' },
+  ]
+    .filter((c): c is Candidate => typeof c.key === 'string' && c.key.trim().length > 0)
+    .map((c) => ({ ...c, key: c.key.trim() }));
+}
+
+/**
+ * Key resolution, first hit wins: the key saved for this workspace, then
+ * CREATOROS_API_KEY, then a single saved key from older installs, then the
+ * CreatorOS CLI's config. A pre-CreatorOS `sk_` key is skipped when a
+ * current key exists anywhere; when it is the only key found, this throws
+ * with how to get a new one. Callers check the key's workspace against the
+ * one they expect (see assertKeyMatchesWorkspace).
+ */
+export async function resolveApiKey(workspaceId?: string): Promise<string | null> {
+  return (await findExistingKey(workspaceId))?.key ?? null;
+}
+
+/** Like resolveApiKey, plus where the key came from (onboarding offers it). */
+export async function findExistingKey(workspaceId?: string): Promise<Candidate | null> {
+  const found = await candidates(workspaceId);
+  const current = found.find((c) => !isLegacyKey(c.key));
   if (current) return current;
-  if (candidates.length > 0) throw new LegacyApiKeyError();
+  if (found.length > 0) throw new LegacyApiKeyError();
   return null;
 }
 
+/** Every workspace key saved by onboarding. */
+export async function savedWorkspaceKeys(): Promise<WorkspaceKey[]> {
+  const ours = await readJson(credentialsPath());
+  return Array.isArray(ours?.workspaces) ? (ours.workspaces as WorkspaceKey[]) : [];
+}
+
+/** Save (or replace) the key for one CreatorOS workspace. */
+export async function saveWorkspaceKey(entry: WorkspaceKey): Promise<void> {
+  const others = (await savedWorkspaceKeys()).filter((w) => w.workspaceId !== entry.workspaceId);
+  await saveCredentials({ workspaces: [...others, entry] } as unknown as StoredCredentials);
+}
+
 export interface StoredCredentials {
-  /** The key for the workspace being run right now. */
-  apiKey: string;
-  /** Agency mode: one CreatorOS key per client brand. */
-  keys?: Array<{ label: string; apiKey: string }>;
+  /** Pre-workspace installs saved a single key here; still read as a fallback. */
+  apiKey?: string;
+  /** One CreatorOS key per workspace (one set of socials each). */
+  workspaces?: WorkspaceKey[];
   /** API key for a custom (Anthropic-compatible) brain. */
   aiApiKey?: string;
   /** Railway account API token — lets the agent provision the worker. */
@@ -114,10 +157,6 @@ export async function resolveAiApiKey(): Promise<string | null> {
 
 export async function saveAiApiKey(aiApiKey: string): Promise<void> {
   await saveCredentials({ aiApiKey } as unknown as StoredCredentials);
-}
-
-export async function saveApiKey(apiKey: string): Promise<void> {
-  await saveCredentials({ apiKey });
 }
 
 export async function saveCredentials(credentials: StoredCredentials): Promise<void> {

@@ -389,3 +389,13 @@ details.card > .details-body, details.card-solid > .details-body { padding: 0 20
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* Workspace switcher (one entry per CreatorOS API key) */
+.workspace-picker {
+  width: 100%; margin: 4px 0 14px; padding: 7px 10px;
+  background: var(--inset); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px;
+  font: inherit; font-size: 13px; cursor: pointer;
+}
+.workspace-picker:focus { outline: none; border-color: var(--accent-border); }
+.workspace-picker:disabled { cursor: default; opacity: 1; }

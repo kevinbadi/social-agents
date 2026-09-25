@@ -8,11 +8,10 @@ import { existsSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 export const INTERVIEW_STEPS = [
-  // The form is two answers and a handoff. No AI questions, no brand
+  // The form is the API key(s) and a handoff. No AI questions, no brand
   // questionnaire, no infrastructure call — those are conversations the
-  // marketing agent has in chat, where it can actually follow up.
-  'mode',
-  'key',
+  // agents have in chat, per workspace, where they can actually follow up.
+  'keys',
   'finish',
 ] as const;
 
@@ -37,34 +36,42 @@ export interface BrandAnswers {
   competitors: string[];
 }
 
+/** A workspace collected by the form. The key itself never lands here. */
+export interface SetupWorkspace {
+  /** CreatorOS workspace id — the saved key is found by it. */
+  workspaceId: string;
+  name: string;
+  /** Folder under workspaces/. */
+  slug: string;
+}
+
+export interface PathwayAnswers {
+  automationTarget: 'local' | 'railway';
+  timezone: string;
+  /** Railway worker URL once deployed — optional at interview time. */
+  workerUrl?: string;
+  /** Generated for the user; goes into social-agents.json + the deploy guide. */
+  workerToken?: string;
+  /** Railway service id for dashboard deploy-status checks. */
+  railwayServiceId?: string;
+  /** A Railway API token was saved to ~/.social-agents — the agent can provision. */
+  railwayTokenSaved?: boolean;
+  /**
+   * An AI credential for the cloud worker already exists in ~/.social-agents
+   * (from a prior run or the shell env) — never collected by the form;
+   * the agent installs one in chat otherwise.
+   */
+  aiCredentialSaved?: boolean;
+}
+
 export interface InterviewState {
   /** Steps already completed, in order. */
   completed: InterviewStep[];
   answers: {
-    /** Is this an agency running client brands, or a creator? */
-    mode?: 'creator' | 'agency';
-    /** Agency client labels only — the keys themselves never land in the workspace. */
-    clientLabels?: string[];
-    brand?: BrandAnswers;
-    profiles?: Array<{ accountId: string; platform: string; username: string }>;
-    pathway?: {
-      automationTarget: 'local' | 'railway';
-      timezone: string;
-      /** Railway worker URL once deployed — optional at interview time. */
-      workerUrl?: string;
-      /** Generated for the user; goes into social-agents.json + the deploy guide. */
-      workerToken?: string;
-      /** Railway service id for dashboard deploy-status checks. */
-      railwayServiceId?: string;
-      /** A Railway API token was saved to ~/.social-agents — the agent can provision. */
-      railwayTokenSaved?: boolean;
-      /**
-       * An AI credential for the cloud worker already exists in ~/.social-agents
-       * (from a prior run or the shell env) — never collected by the form;
-       * the agent installs one in chat otherwise.
-       */
-      aiCredentialSaved?: boolean;
-    };
+    /** How many CreatorOS API keys the user said they have. */
+    keyCount?: number;
+    /** One entry per validated key, in the order they were pasted. */
+    workspaces?: SetupWorkspace[];
   };
 }
 

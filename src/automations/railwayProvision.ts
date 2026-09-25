@@ -25,6 +25,8 @@ export interface ProvisionInputs {
   timezone: string;
   workerToken: string;
   creatorosKey: string;
+  /** The workspaces/ folder this worker runs (one worker = one workspace). */
+  workspaceSlug?: string;
   /** The worker's brain. Optional — the environment deploys without it
    * (boots, serves /health, idles) and the key is installed later from chat. */
   ai?: { kind: 'ANTHROPIC_API_KEY' | 'CLAUDE_CODE_OAUTH_TOKEN'; value: string } | null;
@@ -52,6 +54,7 @@ export function provisionVariableArgs(inputs: ProvisionInputs): string[] {
     '--set', `SOCIAL_AGENTS_WORKER_TOKEN=${inputs.workerToken}`,
     '--set', `TZ=${inputs.timezone}`,
     '--set', 'RAILWAY_DOCKERFILE_PATH=Dockerfile.worker',
+    ...(inputs.workspaceSlug ? ['--set', `SOCIAL_AGENTS_WORKSPACE=${inputs.workspaceSlug}`] : []),
     '--skip-deploys',
   ];
 }

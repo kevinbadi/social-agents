@@ -16,21 +16,31 @@ The end state Social Agents drive toward: all four pillars on cron jobs — cont
 ```sh
 # 1. Fork & clone. (No npm install needed — first start installs for you.)
 
-# 2. All the form needs is your CreatorOS API key:
-#    sign up at https://www.creatoros.ca/, connect at least one social,
-#    then Settings, API keys (cos_live_...).
+# 2. All setup needs is your CreatorOS API key(s):
+#    sign up at https://www.creatoros.ca/, connect your socials,
+#    then Settings, API keys (cos_live_...). One key per set of socials.
 #    Or run `npx @creatoros/cli init`: Social Agents picks that key up too.
-#    No AI setup, no model keys. Two questions and you're in.
+#    No AI setup, no model keys.
 
 # 3. Go.
 npm start creatoros social-agents
 ```
 
-**First run** is a two-question form: creator or agency, then your CreatorOS API key (masked, validated live). It maps your connected accounts into `social-agents/PROFILES.md`, writes the workspace (`CLAUDE.md` at the root plus `social-agents/`), and tells you to go talk to your marketing agent. The agent takes it from there in chat: it interviews you about your brand (`brand-interview` skill → `social-agents/BRAND.md`), asks where automations should live (local or a Railway worker it builds for you), and offers the automation menu. Any agent opened in this folder reads `CLAUDE.md` and picks up the same brief; `social-agents/SETUP_PROMPT.md` holds it as a paste-able prompt. Because setup lives in files, not in one chat, you can spin up as many parallel agent sessions as you like.
+**First run** asks: *Do you have a CreatorOS API key?* (yes/no), then *how many*, then each key (masked, validated live). **Each CreatorOS API key is one workspace: one set of connected socials, one brand.** Every key gets its own folder, `workspaces/<name>/` (named after its CreatorOS workspace), with its own profile map, config, skills, brand pack, logs, content library, and `CLAUDE.md` / `AGENTS.md` brief. Then the form tells you to go talk to your marketing agents. In each workspace they take it from there in chat: they interview you about the brand (`brand-interview` skill → `social-agents/BRAND.md`), ask where automations should live (local or a Railway worker they build for you), and offer the automation menu. Any AI agent opened in a workspace folder (Claude Code, Codex, Cursor...) reads its `CLAUDE.md` or `AGENTS.md`; the repo-root ones list the workspaces. Because setup lives in files, not in one chat, you can spin up as many parallel agent sessions as you like.
+
+```
+workspaces/
+  creator-os-socials/          ← one CreatorOS API key
+    social-agents/             BRAND.md · PROFILES.md · social-agents.json · skills/ · knowledge/
+    content-library/  logs/  CLAUDE.md  AGENTS.md
+  acme-fitness/                ← another key, fully separate
+```
+
+Keys never touch the repo: they're saved per workspace in `~/.social-agents/credentials.json`, and every session checks with CreatorOS that its key belongs to its workspace before doing anything, so one brand can never post as another. Add a key any time with `npm start creatoros add`.
 
 For the agent chat itself you bring a brain: logged-in Claude Code (runs on your Claude plan, recommended), `ANTHROPIC_API_KEY`, or any model behind an Anthropic-compatible API (Moonshot/Kimi, DeepSeek, GLM…) — the built-in `social-agents` chat asks on first launch.
 
-**Every later run** drops you into the Social Agents REPL:
+**Every later run** drops you into the Social Agents REPL for a workspace (asked when you have several; `npm start creatoros social-agents <workspace>` opens one directly):
 
 ```
 you ▸ post this clip everywhere: content-library/day1.mp4
@@ -39,7 +49,7 @@ you ▸ set up the funnel on my launch post — keyword "GUIDE"
 you ▸ schedule the week from content-library/
 ```
 
-Everything Social Agents learn lives in `social-agents/` (gitignored): `BRAND.md` (voice, links, audience — every caption flows from it), `PROFILES.md` (account IDs), `social-agents.json` (config), `skills/` (playbooks), `knowledge/` (competitor research, tutorials index).
+Everything Social Agents learn lives in each workspace's `social-agents/` (all of `workspaces/` is gitignored): `BRAND.md` (voice, links, audience — every caption flows from it), `PROFILES.md` (account IDs), `social-agents.json` (config), `skills/` (playbooks), `knowledge/` (competitor research, tutorials index).
 
 ## Dashboard
 
@@ -48,7 +58,7 @@ npm run dashboard    # → http://localhost:4180  (override: SOCIAL_AGENTS_DASHB
 social-agents dashboard   # same thing, from anywhere (after `npm link`)
 ```
 
-A local web dashboard for monitoring what your agent is *actually doing* — and verifying it's working. Zero external services: it reads this repo's files, the agent's structured activity log (`logs/activity.jsonl`, one JSON line per action the agent takes), and the CreatorOS API with your already-configured credentials. Missing credentials never crash it — you get a friendly connect state instead.
+A local web dashboard for monitoring what your agents are *actually doing* — and verifying it's working — one workspace at a time: the sidebar switches between your workspaces, and every page shows only the selected one (API: `GET /api/workspaces`, then `?workspace=<slug>` on every call). Zero external services: it reads the workspace's files, its structured activity log (`logs/activity.jsonl`, one JSON line per action the agents take), and the CreatorOS API with your already-configured credentials. Missing credentials never crash it — you get a friendly connect state instead.
 
 **Pages:** Overview (health strip, reply/DM/post counters, a GitHub-style year heatmap of agent activity, live feed) · Agent (full transparency into the agent's understanding: persona, objective, KPIs, what the account sells, comment/DM rules, and the literal system prompt it runs on) · Automations (every agentic workflow drawn n8n-style as trigger → action → outcome node chains — cloud funnels straight from the CreatorOS API with their real execution logs, local/Railway crons and auto-replies from the agent's log — each with an operating/armed/failing health badge and a live merged executions feed) · Brand (`social-agents/BRAND.md` rendered, edit-in-place) · Training (every workflow playbook with last-used-by-the-agent info, edit-in-place) · Logs (full filterable feed with raw JSON + real error payloads) · Chat (the same Social Agents as the terminal, streaming in the browser). Dark and light themes, persisted.
 

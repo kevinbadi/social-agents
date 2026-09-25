@@ -434,9 +434,10 @@ export async function runRepl(
   printWelcomeCard([
     `${AMBER}✻${RESET} ${SILVER}Social Agents: your CreatorOS agents${RESET}`,
     '',
-    `${DIM}key${RESET}      ${client.maskedKey}`,
-    `${DIM}pathway${RESET}  ${config?.automationTarget ?? 'local'} · ${config?.timezone ?? 'UTC'}`,
-    `${DIM}brain${RESET}    ${describeBrain(brain)}`,
+    `${DIM}workspace${RESET} ${config?.workspaceName ?? 'this workspace'}`,
+    `${DIM}key${RESET}       ${client.maskedKey}`,
+    `${DIM}pathway${RESET}   ${config?.automationTarget ?? 'local'} · ${config?.timezone ?? 'UTC'}`,
+    `${DIM}brain${RESET}     ${describeBrain(brain)}`,
     '',
     `${DIM}/help for commands · esc interrupts a turn${RESET}`,
   ]);
